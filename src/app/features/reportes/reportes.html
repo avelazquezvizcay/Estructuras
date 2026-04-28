@@ -1,0 +1,35 @@
+<div class="reportes-page">
+
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Reportes</h1>
+      <p class="page-header__subtitle">Genera y exporta reportes de tu estructura de costos</p>
+    </div>
+  </div>
+
+  <div class="reports-grid stagger-children">
+    @for (rep of reportes(); track rep.id) {
+      <div class="report-card card card--interactive">
+        <div class="report-card__icon" [class]="'report-card__icon--' + rep.color">
+          <span class="material-symbols-rounded">{{ rep.icono }}</span>
+        </div>
+        <h3 class="report-card__name">{{ rep.nombre }}</h3>
+        <p class="report-card__desc">{{ rep.descripcion }}</p>
+        <div class="report-card__actions">
+          <button class="btn btn--secondary btn--sm">
+            <span class="material-symbols-rounded">visibility</span>
+            Vista Previa
+          </button>
+          <button class="btn btn--ghost btn--sm">
+            <span class="material-symbols-rounded">download</span>
+            CSV
+          </button>
+          <button class="btn btn--ghost btn--sm">
+            <span class="material-symbols-rounded">table_view</span>
+            Excel
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

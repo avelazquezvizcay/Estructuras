@@ -1,0 +1,23 @@
+{
+  "/api/bcv": {
+    "target": "https://www.bcv.org.ve",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/bcv": "" },
+    "logLevel": "warn"
+  },
+  "/api/dolar": {
+    "target": "https://ve.dolarapi.com/v1/dolares",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/dolar": "" },
+    "logLevel": "warn"
+  },
+  "/api/euro": {
+    "target": "https://ve.dolarapi.com/v1/euros",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/euro": "" },
+    "logLevel": "warn"
+  }
+}

@@ -1,0 +1,73 @@
+@if (isEnabled) {
+  <div class="ai-widget" [class.ai-widget--open]="isOpen()">
+    <!-- Botón Flotante -->
+    <button class="ai-fab" (click)="toggleChat()" [attr.aria-expanded]="isOpen()">
+      @if (isOpen()) {
+        <span class="material-symbols-rounded">close</span>
+      } @else {
+        <span class="material-symbols-rounded">smart_toy</span>
+      }
+    </button>
+
+    <!-- Panel de Chat -->
+    @if (isOpen()) {
+      <div class="ai-panel">
+        <div class="ai-panel__header">
+          <div class="ai-panel__title">
+            <span class="material-symbols-rounded">support_agent</span>
+            Asistente SEC
+          </div>
+          <button class="btn btn--icon btn--ghost" (click)="resetChat()" title="Reiniciar chat">
+            <span class="material-symbols-rounded" style="font-size: 18px">refresh</span>
+          </button>
+        </div>
+
+        <div class="ai-panel__body" #messagesContainer>
+          @for (msg of aiService.messages(); track $index) {
+            @if (msg.role !== 'system') {
+              <div class="ai-msg" [class.ai-msg--user]="msg.role === 'user'" [class.ai-msg--bot]="msg.role === 'assistant'">
+                @if (msg.role === 'assistant') {
+                  <div class="ai-msg__avatar">
+                    <span class="material-symbols-rounded">smart_toy</span>
+                  </div>
+                }
+                <div class="ai-msg__bubble">
+                  <div class="ai-msg__text">{{ msg.content }}</div>
+                </div>
+              </div>
+            }
+          }
+          
+          @if (aiService.isLoading()) {
+            <div class="ai-msg ai-msg--bot">
+              <div class="ai-msg__avatar">
+                <span class="material-symbols-rounded">smart_toy</span>
+              </div>
+              <div class="ai-msg__bubble ai-msg__bubble--loading">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="ai-panel__footer">
+          <div class="ai-input-wrap">
+            <textarea 
+              class="ai-input" 
+              placeholder="Hazme una pregunta sobre el sistema..." 
+              rows="1"
+              [ngModel]="draftMessage()" 
+              (ngModelChange)="draftMessage.set($event)"
+              (keydown)="onKeyDown($event)"
+              [disabled]="aiService.isLoading()">
+            </textarea>
+            <button class="ai-send-btn" (click)="sendMessage()" [disabled]="aiService.isLoading() || !draftMessage().trim()">
+              <span class="material-symbols-rounded">send</span>
+            </button>
+          </div>
+          <div class="ai-footer-hint">Conectado a Groq AI (Llama 3)</div>
+        </div>
+      </div>
+    }
+  </div>
+}

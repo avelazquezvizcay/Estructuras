@@ -1,0 +1,121 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-card__logo">
+      <div class="login-card__logo-icon">
+        <span class="material-symbols-rounded">analytics</span>
+      </div>
+      <h1 class="login-card__logo-title">SEC</h1>
+      <p class="login-card__logo-sub">Sistema de Estructura de Costos</p>
+    </div>
+
+    <!-- Login Form -->
+    @if (mode() === 'login') {
+      <form class="login-form" (ngSubmit)="onLogin()">
+        <h2 class="login-form__title">Iniciar Sesión</h2>
+        <p class="login-form__subtitle">Ingresa tus credenciales para acceder al sistema</p>
+
+        <div class="form-group">
+          <label for="loginEmail">Correo electrónico</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">mail</span>
+            <input id="loginEmail" type="email" placeholder="admin@sec.local"
+                   [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPass">Contraseña</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">lock</span>
+            <input id="loginPass" [type]="showPassword() ? 'text' : 'password'" placeholder="••••••••"
+                   [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required autocomplete="current-password">
+            <button type="button" class="input-toggle" (click)="showPassword.update(v => !v)">
+              <span class="material-symbols-rounded">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--lg login-form__submit" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+          } @else {
+            <span class="material-symbols-rounded">login</span>
+          }
+          Iniciar Sesión
+        </button>
+
+        <div class="login-form__footer">
+          <span>¿No tienes cuenta?</span>
+          <button type="button" class="login-form__link" (click)="toggleMode()">Regístrate aquí</button>
+        </div>
+
+        <div class="login-form__hint">
+          <span class="material-symbols-rounded">info</span>
+          Demo: admin&#64;sec.local / admin123
+        </div>
+      </form>
+    }
+
+    <!-- Register Form -->
+    @if (mode() === 'register') {
+      <form class="login-form" (ngSubmit)="onRegister()">
+        <h2 class="login-form__title">Crear Cuenta</h2>
+        <p class="login-form__subtitle">Completa los datos para registrarte</p>
+
+        <div class="form-group">
+          <label for="regName">Nombre completo</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">person</span>
+            <input id="regName" type="text" placeholder="Tu nombre"
+                   [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" name="nombre" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regEmail">Correo electrónico</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">mail</span>
+            <input id="regEmail" type="email" placeholder="correo@ejemplo.com"
+                   [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regPass">Contraseña</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">lock</span>
+            <input id="regPass" type="password" placeholder="Mínimo 6 caracteres"
+                   [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regConfirm">Confirmar contraseña</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">lock</span>
+            <input id="regConfirm" type="password" placeholder="Repite la contraseña"
+                   [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" name="confirmPassword" required>
+          </div>
+          @if (password() && confirmPassword() && password() !== confirmPassword()) {
+            <span class="form-error">Las contraseñas no coinciden</span>
+          }
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--lg login-form__submit" [disabled]="loading() || (password() !== confirmPassword())">
+          @if (loading()) {
+            <span class="spinner"></span>
+          } @else {
+            <span class="material-symbols-rounded">person_add</span>
+          }
+          Crear Cuenta
+        </button>
+
+        <div class="login-form__footer">
+          <span>¿Ya tienes cuenta?</span>
+          <button type="button" class="login-form__link" (click)="toggleMode()">Inicia sesión</button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

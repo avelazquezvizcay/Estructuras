@@ -1,0 +1,123 @@
+<div class="presupuestos-page">
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Presupuestos</h1>
+      <p class="page-header__subtitle">Crea cotizaciones seleccionando productos y niveles de precio</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--secondary btn--sm" (click)="toggleMoneda()">
+        <span class="material-symbols-rounded">swap_horiz</span>
+        {{ monedaDisplay() }}
+      </button>
+      <button class="btn btn--secondary" (click)="limpiar()">
+        <span class="material-symbols-rounded">refresh</span>
+        Limpiar
+      </button>
+      <button class="btn btn--primary" (click)="generarPdf()">
+        <span class="material-symbols-rounded">picture_as_pdf</span>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="presupuesto-grid">
+    <!-- Main Form -->
+    <div class="presupuesto-main card">
+      <!-- Client info -->
+      <div class="form-row form-row--2col" style="margin-bottom: var(--space-6)">
+        <div class="form-group">
+          <label>Nombre del Cliente / Empresa (Para el membrete)</label>
+          <input type="text" placeholder="Ej. Comercializadora ABC" [ngModel]="clienteNombre()" (ngModelChange)="clienteNombre.set($event)">
+        </div>
+      </div>
+
+      <!-- PDF Options Configuration -->
+      <div class="builder-header">
+        <h3 class="builder-title">Configuración del Documento</h3>
+      </div>
+      
+      <div class="pdf-config-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); background: var(--bg-surface); padding: var(--space-4); border-radius: 12px; border: 1px solid var(--border-primary);">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" [ngModel]="configPdf().incluirReceta" (ngModelChange)="updateConfig('incluirReceta', $event)">
+          <span>Incluir Receta (Insumos ocultos o visibles)</span>
+        </label>
+        
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioDetal" (ngModelChange)="updateConfig('mostrarPrecioDetal', $event)">
+          <span>Mostrar Precio al Detal</span>
+        </label>
+        
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioMayor" (ngModelChange)="updateConfig('mostrarPrecioMayor', $event)">
+          <span>Mostrar Precio al Mayor</span>
+        </label>
+        
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioGranMayor" (ngModelChange)="updateConfig('mostrarPrecioGranMayor', $event)">
+          <span>Mostrar Precio al Gran Mayor</span>
+        </label>
+      </div>
+
+      <!-- Items builder -->
+      <div class="builder-header">
+        <h3 class="builder-title">Productos a Incluir</h3>
+        <button class="btn btn--secondary btn--sm" (click)="addItem()">
+          <span class="material-symbols-rounded">add</span>
+          Agregar Producto
+        </button>
+      </div>
+
+      <div class="items-list">
+        @for (item of itemsView(); track item._index; let i = $index) {
+          <div class="item-row" style="align-items: center;">
+            <div class="item-row__main">
+              <div class="form-group" style="flex: 1">
+                <select [ngModel]="item.producto.id" (ngModelChange)="updateItem(i, $event)">
+                  @for (prod of productoService.productos(); track prod.id) {
+                    <option [value]="prod.id">{{ prod.nombre }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            
+            <div class="item-row__footer" style="margin-top: 0;">
+              <button class="btn btn--ghost btn--icon item-row__remove" (click)="removeItem(i)" aria-label="Remover">
+                <span class="material-symbols-rounded">close</span>
+              </button>
+            </div>
+          </div>
+        }
+        @if (productosSeleccionados().length === 0) {
+          <div class="empty-state">
+            <span class="material-symbols-rounded">list_alt_add</span>
+            <div class="empty-state__title">No hay productos</div>
+            <div class="empty-state__description">Agrega productos para armar el documento</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Summary Sidebar -->
+    <div class="presupuesto-sidebar">
+      <div class="card summary-card sticky">
+        <h3 class="summary-card__title">Resumen de Exportación</h3>
+        
+        <div class="summary-card__body">
+          <div class="summary-row">
+            <span>Productos a listar</span>
+            <span>{{ productosSeleccionados().length }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Formato</span>
+            <span>Catálogo PDF</span>
+          </div>
+        </div>
+
+        <button class="btn btn--primary btn--lg summary-btn" (click)="generarPdf()">
+          <span class="material-symbols-rounded">share</span>
+          Generar y Compartir PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

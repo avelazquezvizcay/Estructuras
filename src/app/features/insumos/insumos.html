@@ -1,0 +1,239 @@
+<div class="insumos-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">{{ i18n.t('insumos.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('insumos.subtitle') }}</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--primary" (click)="openCreateModal()">
+        <span class="material-symbols-rounded">add</span>
+        {{ i18n.t('insumos.newInput') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="material-symbols-rounded search-box__icon">search</span>
+      <input type="text"
+             class="search-box__input"
+             [placeholder]="i18n.t('insumos.search')"
+             [attr.aria-label]="i18n.t('insumos.search')"
+             [ngModel]="searchTerm()"
+             (ngModelChange)="searchTerm.set($event)">
+    </div>
+
+    <div class="filter-chips">
+      @for (cat of insumoService.categorias(); track cat) {
+        <button class="filter-chip"
+                [class.filter-chip--active]="categoriaFilter() === cat"
+                (click)="setCategoria(cat)">
+          {{ cat }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-wrapper card">
+    @if (filteredInsumos().length > 0) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ i18n.t('insumos.col.input') }}</th>
+            <th>{{ i18n.t('insumos.col.category') }}</th>
+            <th>{{ i18n.t('insumos.col.presentation') }}</th>
+            <th>{{ i18n.t('insumos.col.costPresentation') }}</th>
+            <th>{{ i18n.t('insumos.col.baseCost') }}</th>
+            <th>{{ i18n.t('insumos.col.supplier') }}</th>
+            <th>{{ i18n.t('insumos.col.updated') }}</th>
+            <th>{{ i18n.t('insumos.col.actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ins of filteredInsumos(); track ins.id) {
+            <tr>
+              <td>
+                <div class="cell-main">
+                  <span class="cell-main__name">{{ ins.nombre }}</span>
+                  <span class="cell-main__sub">{{ i18n.t('common.base') }}: {{ ins.unidadBase }}</span>
+                </div>
+              </td>
+              <td><span class="badge badge--primary">{{ ins.categoria }}</span></td>
+              <td>{{ ins.presentacion }}</td>
+              <td>
+                <span class="currency-value currency-value--usd">{{ formatCostPresentacion(ins) }}</span>
+                @if (ins.monedaRegistro === 'VES') {
+                  <span class="moneda-tag">Bs</span>
+                }
+              </td>
+              <td>
+                <span class="cost-base-chip">{{ formatCostBase(ins) }}</span>
+              </td>
+              <td class="text-muted">{{ ins.proveedor || '—' }}</td>
+              <td class="text-muted">{{ ins.fecha }}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn--ghost btn--icon" (click)="openEditModal(ins)" [attr.aria-label]="i18n.t('common.edit')">
+                    <span class="material-symbols-rounded">edit</span>
+                  </button>
+                  <button class="btn btn--ghost btn--icon" (click)="confirmDelete(ins)" [attr.aria-label]="i18n.t('common.delete')">
+                    <span class="material-symbols-rounded">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <div class="empty-state">
+        <span class="material-symbols-rounded">inventory_2</span>
+        <div class="empty-state__title">No hay insumos</div>
+        <div class="empty-state__description">Agrega tu primer insumo para comenzar a calcular costos de producción.</div>
+        <button class="btn btn--primary" (click)="openCreateModal()">
+          <span class="material-symbols-rounded">add</span>
+          {{ i18n.t('insumos.newInput') }}
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Table Footer -->
+  @if (filteredInsumos().length > 0) {
+    <div class="table-footer">
+      <span class="table-footer__count">{{ i18n.t('insumos.showing') }} {{ filteredInsumos().length }} {{ i18n.t('insumos.items') }}</span>
+    </div>
+  }
+</div>
+
+
+<!-- ═══ Create / Edit Modal ═══ -->
+@if (showModal()) {
+  <sec-modal [title]="editingId() ? 'Editar Insumo' : 'Nuevo Insumo'" maxWidth="620px" (closed)="closeModal()">
+    <form class="insumo-form" (ngSubmit)="saveInsumo()">
+
+      <div class="form-row">
+        <div class="form-group form-group--full">
+          <label for="nombre">Nombre del insumo *</label>
+          <input id="nombre" type="text" placeholder="Ej. Harina de Trigo"
+                 [ngModel]="formNombre()" (ngModelChange)="formNombre.set($event)" name="nombre" required>
+        </div>
+      </div>
+
+      <div class="form-row form-row--2col">
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <input id="categoria" type="text" placeholder="Ej. Harinas"
+                 [ngModel]="formCategoria()" (ngModelChange)="formCategoria.set($event)" name="categoria"
+                 list="categorias-list">
+          <datalist id="categorias-list">
+            @for (cat of insumoService.categorias(); track cat) {
+              @if (cat !== 'Todas') {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            }
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label for="proveedor">Proveedor</label>
+          <input id="proveedor" type="text" placeholder="Ej. Distribuidora ABC"
+                 [ngModel]="formProveedor()" (ngModelChange)="formProveedor.set($event)" name="proveedor">
+        </div>
+      </div>
+
+      <div class="form-row form-row--3col">
+        <div class="form-group">
+          <label for="tipoMedida">Tipo de medida</label>
+          <select id="tipoMedida" [ngModel]="formTipoMedida()" (ngModelChange)="formTipoMedida.set($event)" name="tipoMedida">
+            <option value="peso">Peso (g/kg)</option>
+            <option value="volumen">Volumen (ml/l)</option>
+            <option value="cantidad">Cantidad (unid/docena)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="unidadBase">Unidad base</label>
+          <select id="unidadBase" [ngModel]="formUnidadBase()" (ngModelChange)="formUnidadBase.set($event)" name="unidadBase">
+            @for (u of unidadesDisponibles(); track u) {
+              <option [value]="u">{{ u }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="presentacionUnidad">Unidad presentación</label>
+          <select id="presentacionUnidad" [ngModel]="formPresentacionUnidad()" (ngModelChange)="formPresentacionUnidad.set($event)" name="presentacionUnidad">
+            @for (u of unidadesDisponibles(); track u) {
+              <option [value]="u">{{ u }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="form-row form-row--3col">
+        <div class="form-group">
+          <label for="presentacionCant">Cantidad por presentación</label>
+          <input id="presentacionCant" type="number" min="1" step="any"
+                 [ngModel]="formPresentacionCantidad()" (ngModelChange)="formPresentacionCantidad.set($event)" name="presentacionCant">
+        </div>
+        <div class="form-group">
+          <label for="costo">Costo de la presentación *</label>
+          <input id="costo" type="number" min="0" step="0.01" placeholder="0.00"
+                 [ngModel]="formCosto()" (ngModelChange)="formCosto.set($event)" name="costo"
+                 [attr.aria-label]="'Costo en ' + formMoneda()">
+        </div>
+        <div class="form-group">
+          <label for="moneda">Moneda</label>
+          <select id="moneda" [ngModel]="formMoneda()" (ngModelChange)="formMoneda.set($event)" name="moneda">
+            <option value="USD">$ Dólar (USD)</option>
+            <option value="VES">Bs Bolívar (VES)</option>
+          </select>
+        </div>
+      </div>
+
+      @if (costoConvertido()) {
+        <div class="form-conversion-hint">
+          <span class="material-symbols-rounded">swap_horiz</span>
+          {{ costoConvertido() }}
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" (click)="closeModal()">
+          {{ i18n.t('common.cancel') }}
+        </button>
+        <button type="submit" class="btn btn--primary">
+          <span class="material-symbols-rounded">{{ editingId() ? 'save' : 'add' }}</span>
+          {{ editingId() ? i18n.t('common.save') : i18n.t('insumos.newInput') }}
+        </button>
+      </div>
+    </form>
+  </sec-modal>
+}
+
+
+<!-- ═══ Delete Confirmation Modal ═══ -->
+@if (showDeleteConfirm()) {
+  <sec-modal title="Confirmar eliminación" maxWidth="440px" (closed)="showDeleteConfirm.set(false)">
+    <div class="delete-confirm">
+      <div class="delete-confirm__icon">
+        <span class="material-symbols-rounded">warning</span>
+      </div>
+      <p class="delete-confirm__text">
+        ¿Estás seguro de eliminar el insumo <strong>{{ deletingInsumo()?.nombre }}</strong>?
+      </p>
+      <p class="delete-confirm__sub">Esta acción no se puede deshacer.</p>
+      <div class="delete-confirm__actions">
+        <button class="btn btn--secondary" (click)="showDeleteConfirm.set(false)">{{ i18n.t('common.cancel') }}</button>
+        <button class="btn btn--danger" (click)="executeDelete()">
+          <span class="material-symbols-rounded">delete</span>
+          {{ i18n.t('common.delete') }}
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}

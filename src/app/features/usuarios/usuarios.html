@@ -1,0 +1,152 @@
+<div class="usuarios-page">
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Gestión de Usuarios y Módulos</h1>
+      <p class="page-header__subtitle">Administra usuarios, roles y visibilidad de módulos</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--primary" (click)="showCreateModal.set(true)">
+        <span class="material-symbols-rounded">person_add</span>
+        Nuevo Usuario
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'users'" (click)="activeTab.set('users')">
+      <span class="material-symbols-rounded">group</span>
+      Usuarios
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'modules'" (click)="activeTab.set('modules')">
+      <span class="material-symbols-rounded">apps</span>
+      Módulos
+    </button>
+  </div>
+
+  <!-- ═══ Users Tab ═══ -->
+  @if (activeTab() === 'users') {
+    <div class="card table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Creado</th>
+            <th style="width:80px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of auth.users(); track user.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-cell__avatar">{{ user.nombre.charAt(0).toUpperCase() }}</div>
+                  <span class="user-cell__name">{{ user.nombre }}</span>
+                </div>
+              </td>
+              <td class="cell-email">{{ user.email }}</td>
+              <td>
+                <select class="role-select" [class]="getRoleBadgeClass(user.role)"
+                        [ngModel]="user.role" (ngModelChange)="changeRole(user, $event)"
+                        [disabled]="user.role === 'master'">
+                  <option value="master">Master</option>
+                  <option value="admin">Admin</option>
+                  <option value="user">Usuario</option>
+                </select>
+              </td>
+              <td class="cell-date">{{ formatDate(user.createdAt) }}</td>
+              <td>
+                @if (user.role !== 'master') {
+                  <button class="btn btn--ghost btn--icon" (click)="deleteUser(user)" aria-label="Eliminar">
+                    <span class="material-symbols-rounded">delete</span>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ═══ Modules Tab ═══ -->
+  @if (activeTab() === 'modules') {
+    <div class="modules-grid">
+      @for (mod of auth.modules(); track mod.id) {
+        <div class="module-card card" [class.module-card--disabled]="!mod.enabled">
+          <div class="module-card__header">
+            <div class="module-card__icon">
+              <span class="material-symbols-rounded">{{ mod.icon }}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [checked]="mod.enabled" (change)="toggleModule(mod)">
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+
+          <h3 class="module-card__name">{{ mod.label }}</h3>
+          <p class="module-card__route">{{ mod.route }}</p>
+
+          <div class="module-card__roles">
+            <span class="module-card__roles-label">Acceso por rol:</span>
+            <div class="module-card__role-checks">
+              <label class="checkbox-sm" [class.checkbox-sm--disabled]="!mod.enabled">
+                <input type="checkbox" [checked]="mod.rolesAllowed.includes('admin')" (change)="toggleModuleRole(mod, 'admin')" [disabled]="!mod.enabled">
+                <span>Admin</span>
+              </label>
+              <label class="checkbox-sm" [class.checkbox-sm--disabled]="!mod.enabled">
+                <input type="checkbox" [checked]="mod.rolesAllowed.includes('user')" (change)="toggleModuleRole(mod, 'user')" [disabled]="!mod.enabled">
+                <span>Usuario</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ═══ Create User Modal ═══ -->
+@if (showCreateModal()) {
+  <div class="modal-overlay" (click)="showCreateModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card__header">
+        <h2>Nuevo Usuario</h2>
+        <button class="btn btn--ghost btn--icon" (click)="showCreateModal.set(false)">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <form class="modal-form" (ngSubmit)="createUser()">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" placeholder="Nombre del usuario" [ngModel]="newName()" (ngModelChange)="newName.set($event)" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" placeholder="correo@ejemplo.com" [ngModel]="newEmail()" (ngModelChange)="newEmail.set($event)" name="email" required>
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" placeholder="Mínimo 6 caracteres" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" name="password" required>
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select [ngModel]="newRole()" (ngModelChange)="newRole.set($event)" name="role">
+            <option value="admin">Admin</option>
+            <option value="user">Usuario</option>
+          </select>
+        </div>
+        <div class="modal-form__actions">
+          <button type="button" class="btn btn--secondary" (click)="showCreateModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn--primary">
+            <span class="material-symbols-rounded">person_add</span>
+            Crear
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

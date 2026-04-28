@@ -1,0 +1,175 @@
+<div class="dashboard">
+
+  <!-- ═══ Page Header ═══ -->
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Dashboard</h1>
+      <p class="page-header__subtitle">Resumen general del sistema de costos</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--secondary">
+        <span class="material-symbols-rounded">download</span>
+        Exportar
+      </button>
+      <button class="btn btn--primary">
+        <span class="material-symbols-rounded">add</span>
+        Nuevo Producto
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ KPI Cards ═══ -->
+  <section class="kpi-grid stagger-children" aria-label="Indicadores clave">
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="kpi-card" [style.background]="getKpiGradient(kpi.color)">
+        <div class="kpi-card__header">
+          <div class="kpi-card__icon" [style.background]="getKpiIconBg(kpi.color)">
+            <span class="material-symbols-rounded" [style.color]="getKpiIconColor(kpi.color)">
+              {{ kpi.icon }}
+            </span>
+          </div>
+          @if (kpi.trend) {
+            <div class="kpi-card__trend" [class]="'kpi-card__trend--' + kpi.trend">
+              <span class="material-symbols-rounded">
+                {{ kpi.trend === 'up' ? 'trending_up' : kpi.trend === 'down' ? 'trending_down' : 'trending_flat' }}
+              </span>
+              <span>{{ kpi.trendValue }}</span>
+            </div>
+          }
+        </div>
+        <div class="kpi-card__value">{{ kpi.value }}</div>
+        <div class="kpi-card__label">{{ kpi.label }}</div>
+        @if (kpi.subvalue) {
+          <div class="kpi-card__subvalue">{{ kpi.subvalue }}</div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- ═══ Rates Summary Bar ═══ -->
+  <section class="rates-bar" aria-label="Tasas de cambio actuales">
+    <div class="rates-bar__title">
+      <span class="material-symbols-rounded">currency_exchange</span>
+      Tasas Activas
+    </div>
+    <div class="rates-bar__items">
+      @if (tasaService.tasaBcv(); as bcv) {
+        <div class="rates-bar__item">
+          <span class="rates-bar__badge rates-bar__badge--bcv">BCV</span>
+          <span class="rates-bar__rate">{{ bcv.valor.toFixed(2) }}</span>
+          <span class="rates-bar__currency">Bs/USD</span>
+        </div>
+      }
+      @if (tasaService.tasaBinance(); as binance) {
+        <div class="rates-bar__item">
+          <span class="rates-bar__badge rates-bar__badge--binance">USDT</span>
+          <span class="rates-bar__rate">{{ binance.valor.toFixed(2) }}</span>
+          <span class="rates-bar__currency">Bs/USDT</span>
+        </div>
+      }
+      @if (tasaService.tasaEuro(); as euro) {
+        <div class="rates-bar__item">
+          <span class="rates-bar__badge rates-bar__badge--euro">EUR</span>
+          <span class="rates-bar__rate">{{ euro.valor.toFixed(2) }}</span>
+          <span class="rates-bar__currency">Bs/EUR</span>
+        </div>
+      }
+    </div>
+    <div class="rates-bar__updated">
+      <span class="material-symbols-rounded">schedule</span>
+      Actualizado hace 2 horas
+    </div>
+  </section>
+
+  <!-- ═══ Content Grid ═══ -->
+  <div class="content-grid">
+
+    <!-- Top Productos -->
+    <section class="card animate-fade-in-up" aria-label="Productos destacados">
+      <div class="card__header" style="align-items: center; justify-content: space-between;">
+        <div>
+          <h2 class="card__title">Top 5 Productos</h2>
+          <p class="card__subtitle">Rendimiento de tus productos</p>
+        </div>
+        <div class="filter-group">
+          <select class="form-select form-select--sm" 
+                  [ngModel]="filtroProductos()" 
+                  (ngModelChange)="filtroProductos.set($event)">
+            <option value="mayor_margen">Mayor Margen de Ganancia</option>
+            <option value="menor_costo">Menor Costo de Producción</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="products-list">
+        @for (prod of productosFiltrados(); track prod.nombre; let i = $index) {
+          <div class="product-row">
+            <div class="product-row__rank">{{ i + 1 }}</div>
+            <div class="product-row__info">
+              <span class="product-row__name">{{ prod.nombre }}</span>
+              <span class="product-row__meta">
+                Costo: <strong class="currency-value currency-value--usd">${{ prod.costo.toFixed(2) }}</strong>
+              </span>
+            </div>
+            <div class="product-row__right">
+              <span class="product-row__price currency-value currency-value--usd">${{ prod.venta.toFixed(2) }}</span>
+              <span class="badge badge--success">{{ prod.margen }}%</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Top Insumos -->
+    <section class="card animate-fade-in-up" style="animation-delay: 100ms" aria-label="Insumos más utilizados">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">Top 5 Insumos</h2>
+          <p class="card__subtitle">Insumos más utilizados en recetas</p>
+        </div>
+        <button class="btn btn--ghost btn--sm">Ver todos</button>
+      </div>
+
+      <div class="insumos-list">
+        @for (ins of topInsumos(); track ins.nombre; let i = $index) {
+          <div class="insumo-row">
+            <div class="insumo-row__rank">{{ i + 1 }}</div>
+            <div class="insumo-row__info">
+              <span class="insumo-row__name">{{ ins.nombre }}</span>
+              <span class="insumo-row__meta">{{ ins.categoria }}</span>
+            </div>
+            <div class="insumo-row__right">
+              <span class="insumo-row__uses">{{ ins.usos }} recetas</span>
+              <span class="insumo-row__cost">{{ ins.costoBase }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Actividad Reciente -->
+    <section class="card card--full animate-fade-in-up" style="animation-delay: 200ms" aria-label="Actividad reciente">
+      <div class="card__header">
+        <div>
+          <h2 class="card__title">Actividad Reciente</h2>
+          <p class="card__subtitle">Últimos cambios en el sistema</p>
+        </div>
+      </div>
+
+      <div class="activity-list">
+        @for (act of actividadReciente(); track act.texto) {
+          <div class="activity-item">
+            <div class="activity-item__icon" [class]="'activity-item__icon--' + act.color">
+              <span class="material-symbols-rounded">{{ act.icono }}</span>
+            </div>
+            <div class="activity-item__content">
+              <span class="activity-item__text">{{ act.texto }}</span>
+              <span class="activity-item__time">{{ act.tiempo }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+  </div>
+</div>

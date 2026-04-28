@@ -1,0 +1,231 @@
+<div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
+
+  <!-- ═══ Mobile Overlay ═══ -->
+  @if (mobileMenuOpen()) {
+    <div class="layout__overlay" (click)="closeMobileMenu()" role="presentation"></div>
+  }
+
+  <!-- ═══ Dropdowns Overlay ═══ -->
+  @if (showNotifPanel() || showUserDropdown()) {
+    <div class="dropdown-overlay" (click)="closeDropdowns()" role="presentation"></div>
+  }
+
+  <!-- ═══ Sidebar ═══ -->
+  <aside class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed()" [class.sidebar--mobile-open]="mobileMenuOpen()">
+
+    <!-- Logo area -->
+    <div class="sidebar__logo">
+      <div class="sidebar__logo-icon">
+        <span class="material-symbols-rounded">analytics</span>
+      </div>
+      @if (!sidebarCollapsed()) {
+        <div class="sidebar__logo-text">
+          <span class="sidebar__logo-name">SEC</span>
+          <span class="sidebar__logo-desc">Estructura de Costos</span>
+        </div>
+      }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar__nav" aria-label="Navegación principal">
+      <ul class="sidebar__nav-list">
+        @for (item of navItems(); track item.route) {
+          <li>
+            <a class="sidebar__nav-item"
+               [routerLink]="item.route"
+               routerLinkActive="sidebar__nav-item--active"
+               [attr.aria-label]="item.label"
+               (click)="closeMobileMenu()">
+              <span class="material-symbols-rounded sidebar__nav-icon">{{ item.icon }}</span>
+              @if (!sidebarCollapsed()) {
+                <span class="sidebar__nav-label">{{ item.label }}</span>
+              }
+            </a>
+          </li>
+        }
+
+        <!-- User management (master only) -->
+        @if (auth.isMaster()) {
+          <li class="sidebar__nav-divider"></li>
+          <li>
+            <a class="sidebar__nav-item"
+               routerLink="/usuarios"
+               routerLinkActive="sidebar__nav-item--active"
+               (click)="closeMobileMenu()">
+              <span class="material-symbols-rounded sidebar__nav-icon">group</span>
+              @if (!sidebarCollapsed()) {
+                <span class="sidebar__nav-label">Usuarios</span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- Sidebar footer -->
+    <div class="sidebar__footer">
+      <button class="sidebar__collapse-btn" (click)="toggleSidebar()" aria-label="Colapsar menú">
+        <span class="material-symbols-rounded"
+              [style.transform]="sidebarCollapsed() ? 'rotate(180deg)' : 'none'">
+          chevron_left
+        </span>
+        @if (!sidebarCollapsed()) {
+          <span class="sidebar__collapse-label">{{ i18n.t('nav.collapse') }}</span>
+        }
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══ Main Content Area ═══ -->
+  <div class="main-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header__left">
+        <button class="header__menu-btn" (click)="toggleMobileMenu()" aria-label="Abrir menú">
+          <span class="material-symbols-rounded">menu</span>
+        </button>
+        <div class="header__breadcrumb">
+          <span class="header__date">{{ currentDate() }}</span>
+        </div>
+      </div>
+
+      <div class="header__right">
+        <!-- Exchange rate ticker -->
+        <div class="header__rates">
+          @if (tasaService.tasaBcv(); as bcv) {
+            <div class="rate-chip rate-chip--bcv">
+              <span class="rate-chip__label">BCV</span>
+              <span class="rate-chip__value">{{ bcv.valor.toFixed(2) }}</span>
+              <span class="rate-chip__unit">Bs</span>
+            </div>
+          }
+          @if (tasaService.tasaBinance(); as binance) {
+            <div class="rate-chip rate-chip--binance">
+              <span class="rate-chip__label">USDT</span>
+              <span class="rate-chip__value">{{ binance.valor.toFixed(2) }}</span>
+              <span class="rate-chip__unit">Bs</span>
+            </div>
+          }
+          @if (tasaService.tasaEuro(); as euro) {
+            <div class="rate-chip rate-chip--euro">
+              <span class="rate-chip__label">EUR</span>
+              <span class="rate-chip__value">{{ euro.valor.toFixed(2) }}</span>
+              <span class="rate-chip__unit">Bs</span>
+            </div>
+          }
+          @if (tasaService.loading()) {
+            <div class="rate-chip rate-chip--loading">
+              <span class="rate-spinner"></span>
+            </div>
+          }
+        </div>
+
+        <!-- Language toggle -->
+        <button class="header__tool-btn" (click)="toggleLang()" [attr.aria-label]="'Idioma'">
+          <span class="lang-badge">{{ i18n.lang() === 'es' ? 'ES' : 'EN' }}</span>
+        </button>
+
+        <!-- Theme toggle -->
+        <button class="header__tool-btn" (click)="toggleTheme()" [attr.aria-label]="'Cambiar tema'">
+          <span class="material-symbols-rounded">
+            {{ themeService.theme() === 'light' ? 'dark_mode' : 'light_mode' }}
+          </span>
+        </button>
+
+        <!-- Notifications bell -->
+        <div class="header__notif-wrapper">
+          <button class="header__tool-btn" (click)="toggleNotifPanel()" aria-label="Notificaciones">
+            <span class="material-symbols-rounded">notifications</span>
+            @if (notifService.hasUnread()) {
+              <span class="notif-badge">{{ notifService.unreadCount() }}</span>
+            }
+          </button>
+
+          @if (showNotifPanel()) {
+            <div class="notif-panel" (click)="$event.stopPropagation()">
+              <div class="notif-panel__header">
+                <h3>Notificaciones</h3>
+                @if (notifService.hasUnread()) {
+                  <button class="notif-panel__mark-all" (click)="notifService.markAllAsRead(); showNotifPanel.set(false); $event.stopPropagation()">
+                    Marcar todo leído
+                  </button>
+                }
+              </div>
+              <div class="notif-panel__body">
+                @for (notif of notifService.notifications(); track notif.id) {
+                  <div class="notif-item" [class.notif-item--unread]="!notif.read" (click)="notifService.markAsRead(notif.id)">
+                    <div class="notif-item__icon notif-item__icon--{{ notif.type }}">
+                      <span class="material-symbols-rounded">{{ notif.icon }}</span>
+                    </div>
+                    <div class="notif-item__content">
+                      <div class="notif-item__title">{{ notif.title }}</div>
+                      <div class="notif-item__message">{{ notif.message }}</div>
+                      <div class="notif-item__time">{{ formatTimeAgo(notif.timestamp) }}</div>
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="notif-panel__empty">
+                    <span class="material-symbols-rounded">notifications_off</span>
+                    <p>Sin notificaciones</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- User avatar / dropdown -->
+        <div class="header__user-wrapper">
+          <button class="header__user-btn" (click)="toggleUserDropdown()">
+            <div class="header__avatar-circle">
+              <span>{{ userInitials() }}</span>
+            </div>
+            @if (auth.currentUser(); as user) {
+              <div class="header__user-info">
+                <span class="header__user-name">{{ user.nombre }}</span>
+                <span class="header__user-role">{{ user.role | titlecase }}</span>
+              </div>
+            }
+          </button>
+
+          @if (showUserDropdown()) {
+            <div class="user-dropdown" (click)="$event.stopPropagation()">
+              @if (auth.currentUser(); as user) {
+                <div class="user-dropdown__header">
+                  <div class="user-dropdown__avatar">{{ userInitials() }}</div>
+                  <div>
+                    <div class="user-dropdown__name">{{ user.nombre }}</div>
+                    <div class="user-dropdown__email">{{ user.email }}</div>
+                  </div>
+                </div>
+              }
+              <div class="user-dropdown__divider"></div>
+              <button class="user-dropdown__item" routerLink="/configuracion" (click)="closeDropdowns()">
+                <span class="material-symbols-rounded">settings</span>
+                Configuración
+              </button>
+              @if (auth.isMaster()) {
+                <button class="user-dropdown__item" routerLink="/usuarios" (click)="closeDropdowns()">
+                  <span class="material-symbols-rounded">group</span>
+                  Gestión de Usuarios
+                </button>
+              }
+              <div class="user-dropdown__divider"></div>
+              <button class="user-dropdown__item user-dropdown__item--danger" (click)="logout()">
+                <span class="material-symbols-rounded">logout</span>
+                Cerrar Sesión
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="main-content">
+      <router-outlet />
+      <sec-ai-assistant></sec-ai-assistant>
+    </main>
+  </div>
+</div>

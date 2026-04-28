@@ -1,0 +1,399 @@
+<div class="productos-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">{{ i18n.t('productos.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('productos.subtitle') }}</p>
+    </div>
+    <div class="page-header__actions">
+      <!-- Currency toggle -->
+      <button class="btn btn--secondary btn--sm" (click)="toggleMoneda()">
+        <span class="material-symbols-rounded">swap_horiz</span>
+        {{ monedaDisplay() }}
+      </button>
+      <!-- View toggle -->
+      <div class="view-toggle">
+        <button class="view-toggle__btn" [class.view-toggle__btn--active]="viewMode() === 'grid'" (click)="viewMode.set('grid')">
+          <span class="material-symbols-rounded">grid_view</span>
+        </button>
+        <button class="view-toggle__btn" [class.view-toggle__btn--active]="viewMode() === 'table'" (click)="viewMode.set('table')">
+          <span class="material-symbols-rounded">view_list</span>
+        </button>
+      </div>
+      <button class="btn btn--primary" (click)="openCreateModal()">
+        <span class="material-symbols-rounded">add</span>
+        {{ i18n.t('productos.newProduct') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid View -->
+  @if (viewMode() === 'grid') {
+    @if (productoService.productos().length > 0) {
+      <div class="products-grid stagger-children">
+        @for (prod of productoService.productos(); track prod.id) {
+          <div class="product-card card card--interactive">
+            <div class="product-card__header">
+              <div class="product-card__icon">
+                <span class="material-symbols-rounded">bakery_dining</span>
+              </div>
+              <span class="badge badge--primary">{{ prod.categoria }}</span>
+            </div>
+            <h3 class="product-card__name">{{ prod.nombre }}</h3>
+            <p class="product-card__desc">{{ prod.descripcion }}</p>
+
+            <!-- Price tiers -->
+            <div class="product-card__prices">
+              @for (precio of prod.precios; track precio.nivel) {
+                <div class="price-tier">
+                  <span class="price-tier__label">{{ precio.label }}</span>
+                  <span class="price-tier__value">{{ formatPrice(precio.precioUsd) }}</span>
+                  <span class="price-tier__margin">{{ precio.margenPct }}%</span>
+                </div>
+              }
+            </div>
+
+            <div class="product-card__cost">
+              <span class="material-symbols-rounded">receipt_long</span>
+              {{ i18n.t('productos.cost') }}: {{ formatPrice(prod.costoTotalUsd) }}
+              · {{ prod.receta.length }} {{ i18n.t('productos.inputs') }}
+            </div>
+
+            <div class="product-card__actions">
+              <button class="btn btn--ghost btn--sm" (click)="openDetailModal(prod)">
+                <span class="material-symbols-rounded">visibility</span>
+                {{ i18n.t('productos.view') }}
+              </button>
+              <button class="btn btn--ghost btn--sm" (click)="openShareModal(prod)">
+                <span class="material-symbols-rounded">share</span>
+              </button>
+              <button class="btn btn--ghost btn--sm btn--icon" (click)="confirmDelete(prod)" aria-label="Eliminar">
+                <span class="material-symbols-rounded">delete</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state card">
+        <span class="material-symbols-rounded">bakery_dining</span>
+        <div class="empty-state__title">No hay productos</div>
+        <div class="empty-state__description">Crea tu primer producto y arma su receta de costos.</div>
+        <button class="btn btn--primary" (click)="openCreateModal()">
+          <span class="material-symbols-rounded">add</span>
+          {{ i18n.t('productos.newProduct') }}
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Table View -->
+  @if (viewMode() === 'table') {
+    <div class="table-wrapper card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>{{ i18n.t('productos.cost') }}</th>
+            <th>Detalle</th>
+            <th>Mayor</th>
+            <th>Super Mayor</th>
+            <th>Insumos</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (prod of productoService.productos(); track prod.id) {
+            <tr>
+              <td>
+                <div class="cell-main">
+                  <span class="cell-main__name">{{ prod.nombre }}</span>
+                  <span class="cell-main__sub">{{ prod.descripcion }}</span>
+                </div>
+              </td>
+              <td><span class="badge badge--primary">{{ prod.categoria }}</span></td>
+              <td><span class="currency-value currency-value--usd">{{ formatPrice(prod.costoTotalUsd) }}</span></td>
+              @for (precio of prod.precios; track precio.nivel) {
+                <td><span class="currency-value">{{ formatPrice(precio.precioUsd) }}</span></td>
+              }
+              <td>{{ prod.receta.length }}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn--ghost btn--icon" (click)="openDetailModal(prod)" aria-label="Ver">
+                    <span class="material-symbols-rounded">visibility</span>
+                  </button>
+                  <button class="btn btn--ghost btn--icon" (click)="openShareModal(prod)" aria-label="Compartir">
+                    <span class="material-symbols-rounded">share</span>
+                  </button>
+                  <button class="btn btn--ghost btn--icon" (click)="confirmDelete(prod)" aria-label="Eliminar">
+                    <span class="material-symbols-rounded">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+
+<!-- ═══ Product Detail Modal (Ficha Técnica) ═══ -->
+@if (showDetailModal() && selectedProduct(); as prod) {
+  <sec-modal [title]="prod.nombre" maxWidth="720px" (closed)="showDetailModal.set(false)">
+    <div class="ficha-tecnica">
+      <!-- Header -->
+      <div class="ficha__header">
+        <div>
+          <span class="badge badge--primary">{{ prod.categoria }}</span>
+          <p class="ficha__desc">{{ prod.descripcion }}</p>
+          <p class="ficha__rendimiento">Rendimiento: {{ prod.rendimiento }}</p>
+        </div>
+        <button class="btn btn--secondary btn--sm" (click)="openShareModal(prod)">
+          <span class="material-symbols-rounded">share</span>
+          {{ i18n.t('common.share') }}
+        </button>
+      </div>
+
+      <!-- Price tiers -->
+      <div class="ficha__prices">
+        @for (precio of prod.precios; track precio.nivel) {
+          <div class="ficha__price-card">
+            <span class="ficha__price-label">{{ precio.label }}</span>
+            <span class="ficha__price-value">{{ formatPrice(precio.precioUsd) }}</span>
+            <span class="ficha__price-margin">Margen {{ precio.margenPct }}%</span>
+          </div>
+        }
+      </div>
+
+      <!-- Recipe breakdown -->
+      <h4 class="ficha__section-title">Receta / Estructura de Costos</h4>
+      <table class="data-table ficha__recipe-table">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th>Cantidad</th>
+            <th>Costo Unitario</th>
+            <th>Costo Línea</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of prod.receta; track item.id) {
+            <tr>
+              <td class="ficha__insumo-name">{{ item.insumoNombre }}</td>
+              <td>{{ item.cantidad.toString() }} {{ item.unidad }}</td>
+              <td>
+                @if (insumoService.getById(item.insumoId); as ins) {
+                  {{ formatPrice(ins.costoUnidadBaseUsd) }}/{{ ins.unidadBase }}
+                }
+              </td>
+              <td><strong class="currency-value currency-value--usd">{{ formatPrice(item.costoLineaUsd) }}</strong></td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align: right; font-weight: 700;">Costo Total:</td>
+            <td><strong class="currency-value currency-value--usd ficha__total">{{ formatPrice(prod.costoTotalUsd) }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      @if (prod.notas) {
+        <div class="ficha__notes">
+          <span class="material-symbols-rounded">sticky_note_2</span>
+          {{ prod.notas }}
+        </div>
+      }
+    </div>
+  </sec-modal>
+}
+
+
+<!-- ═══ Create Product Modal ═══ -->
+@if (showModal()) {
+  <sec-modal title="Nuevo Producto" maxWidth="720px" (closed)="closeModal()">
+    <form class="producto-form" (ngSubmit)="saveProducto()">
+
+      <div class="form-row form-row--2col">
+        <div class="form-group">
+          <label for="pNombre">Nombre del producto *</label>
+          <input id="pNombre" type="text" placeholder="Ej. Torta de Chocolate 1kg"
+                 [ngModel]="formNombre()" (ngModelChange)="formNombre.set($event)" name="pNombre" required>
+        </div>
+        <div class="form-group">
+          <label for="pCategoria">Categoría</label>
+          <input id="pCategoria" type="text" placeholder="Ej. Tortas"
+                 [ngModel]="formCategoria()" (ngModelChange)="formCategoria.set($event)" name="pCategoria">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="pDesc">Descripción</label>
+        <input id="pDesc" type="text" placeholder="Breve descripción del producto"
+               [ngModel]="formDescripcion()" (ngModelChange)="formDescripcion.set($event)" name="pDesc">
+      </div>
+
+      <div class="form-row form-row--2col">
+        <div class="form-group">
+          <label for="pRendimiento">Rendimiento</label>
+          <input id="pRendimiento" type="number" min="1"
+                 [ngModel]="formRendimiento()" (ngModelChange)="formRendimiento.set($event)" name="pRendimiento">
+        </div>
+        <div class="form-group">
+          <label for="pRendUnidad">Unidad de rendimiento</label>
+          <input id="pRendUnidad" type="text" placeholder="Ej. torta, porción"
+                 [ngModel]="formRendimientoUnidad()" (ngModelChange)="formRendimientoUnidad.set($event)" name="pRendUnidad">
+        </div>
+      </div>
+
+      <!-- Margins -->
+      <h4 class="form-section-title">Márgenes de Utilidad (%)</h4>
+      <div class="form-row form-row--3col">
+        <div class="form-group">
+          <label for="mDetalle">🏷️ Detalle</label>
+          <input id="mDetalle" type="number" min="0" max="999"
+                 [ngModel]="formMargenDetalle()" (ngModelChange)="formMargenDetalle.set($event)" name="mDetalle">
+        </div>
+        <div class="form-group">
+          <label for="mMayor">📦 Mayor</label>
+          <input id="mMayor" type="number" min="0" max="999"
+                 [ngModel]="formMargenMayor()" (ngModelChange)="formMargenMayor.set($event)" name="mMayor">
+        </div>
+        <div class="form-group">
+          <label for="mSuperMayor">🏭 Super Mayor</label>
+          <input id="mSuperMayor" type="number" min="0" max="999"
+                 [ngModel]="formMargenSuperMayor()" (ngModelChange)="formMargenSuperMayor.set($event)" name="mSuperMayor">
+        </div>
+      </div>
+
+      <!-- Recipe Builder -->
+      <div class="form-section-title-row">
+        <h4 class="form-section-title">Receta</h4>
+        <button type="button" class="btn btn--secondary btn--sm" (click)="addRecetaItem()">
+          <span class="material-symbols-rounded">add</span>
+          Agregar Insumo
+        </button>
+      </div>
+
+      @if (formReceta().length > 0) {
+        <div class="recipe-builder">
+          @for (item of formReceta(); track $index; let i = $index) {
+            <div class="recipe-row">
+              <select class="recipe-row__select"
+                      [ngModel]="item.insumoId"
+                      (ngModelChange)="updateRecetaItem(i, 'insumoId', $event)"
+                      [name]="'receta_insumo_' + i">
+                @for (ins of insumoService.insumos(); track ins.id) {
+                  <option [value]="ins.id">{{ ins.nombre }}</option>
+                }
+              </select>
+              <input type="number" class="recipe-row__qty" min="0" step="any" placeholder="Cant."
+                     [ngModel]="item.cantidad"
+                     (ngModelChange)="updateRecetaItem(i, 'cantidad', $event)"
+                     [name]="'receta_cant_' + i">
+              <span class="recipe-row__unit">{{ item.unidad }}</span>
+              <button type="button" class="btn btn--ghost btn--icon recipe-row__remove" (click)="removeRecetaItem(i)">
+                <span class="material-symbols-rounded">close</span>
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="recipe-empty">
+          <span class="material-symbols-rounded">playlist_add</span>
+          Agrega insumos para calcular el costo automáticamente
+        </div>
+      }
+
+      <!-- Live cost preview -->
+      @if (costoRecetaTotal().gt(0)) {
+        <div class="cost-preview">
+          <div class="cost-preview__label">Costo Total de Receta</div>
+          <div class="cost-preview__value">${{ costoRecetaTotal().toFixed(2) }}</div>
+        </div>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" (click)="closeModal()">{{ i18n.t('common.cancel') }}</button>
+        <button type="submit" class="btn btn--primary">
+          <span class="material-symbols-rounded">add</span>
+          Crear Producto
+        </button>
+      </div>
+    </form>
+  </sec-modal>
+}
+
+
+<!-- ═══ Share / Export Modal ═══ -->
+@if (showShareModal() && selectedProduct(); as prod) {
+  <sec-modal title="Compartir / Exportar" maxWidth="480px" (closed)="showShareModal.set(false)">
+    <div class="share-modal">
+      <div class="share-modal__product">
+        <span class="material-symbols-rounded">bakery_dining</span>
+        <div>
+          <div class="share-modal__name">{{ prod.nombre }}</div>
+          <div class="share-modal__desc">Selecciona qué información incluir en el reporte o mensaje.</div>
+        </div>
+      </div>
+
+      <div class="share-modal__options">
+        <label class="checkbox-label">
+          <input type="checkbox" [ngModel]="shareIncludeRecipe()" (ngModelChange)="shareIncludeRecipe.set($event)">
+          <span>Incluir Estructura de Costos (Receta completa)</span>
+        </label>
+
+        <div class="form-divider"></div>
+        <div class="share-modal__subtitle">Precios de Venta a incluir:</div>
+
+        <label class="checkbox-label">
+          <input type="checkbox" [ngModel]="sharePrices().detalle" (ngModelChange)="toggleSharePrice('detalle')">
+          <span>Detalle ({{ formatPrice(prod.precios[0].precioUsd) }})</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [ngModel]="sharePrices().mayor" (ngModelChange)="toggleSharePrice('mayor')">
+          <span>Mayor ({{ formatPrice(prod.precios[1].precioUsd) }})</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [ngModel]="sharePrices().super_mayor" (ngModelChange)="toggleSharePrice('super_mayor')">
+          <span>Super Mayor ({{ formatPrice(prod.precios[2].precioUsd) }})</span>
+        </label>
+      </div>
+
+      <div class="share-modal__actions">
+        <button class="btn btn--secondary" (click)="exportPdf()">
+          <span class="material-symbols-rounded">picture_as_pdf</span>
+          Generar PDF
+        </button>
+        <button class="btn btn--primary" (click)="shareText()">
+          <span class="material-symbols-rounded">share</span>
+          Compartir Texto
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}
+
+<!-- ═══ Delete Confirmation ═══ -->
+@if (showDeleteConfirm()) {
+  <sec-modal title="Confirmar eliminación" maxWidth="440px" (closed)="showDeleteConfirm.set(false)">
+    <div class="delete-confirm">
+      <div class="delete-confirm__icon">
+        <span class="material-symbols-rounded">warning</span>
+      </div>
+      <p class="delete-confirm__text">¿Eliminar <strong>{{ deletingProduct()?.nombre }}</strong>?</p>
+      <p class="delete-confirm__sub">Se eliminará el producto y toda su receta.</p>
+      <div class="delete-confirm__actions">
+        <button class="btn btn--secondary" (click)="showDeleteConfirm.set(false)">{{ i18n.t('common.cancel') }}</button>
+        <button class="btn btn--danger" (click)="executeDelete()">
+          <span class="material-symbols-rounded">delete</span>
+          {{ i18n.t('common.delete') }}
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}

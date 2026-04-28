@@ -1,0 +1,184 @@
+<div class="config-page">
+
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Configuración</h1>
+      <p class="page-header__subtitle">Ajusta las preferencias del sistema</p>
+    </div>
+  </div>
+
+  <div class="config-grid">
+
+    <!-- Moneda Principal -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--primary">
+          <span class="material-symbols-rounded">payments</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Moneda Principal</h2>
+          <p class="config-section__desc">Define la moneda base de visualización. Los costos de insumos pueden registrarse en USD o Bs.</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="toggle-group">
+          <button class="toggle-option"
+                  [class.toggle-option--active]="monedaPrincipal() === 'USD'"
+                  (click)="setMoneda('USD')">
+            <span class="toggle-option__symbol">$</span>
+            <span class="toggle-option__label">Dólar (USD)</span>
+          </button>
+          <button class="toggle-option"
+                  [class.toggle-option--active]="monedaPrincipal() === 'VES'"
+                  (click)="setMoneda('VES')">
+            <span class="toggle-option__symbol">Bs</span>
+            <span class="toggle-option__label">Bolívar (VES)</span>
+          </button>
+        </div>
+        <p class="config-hint">
+          @if (monedaPrincipal() === 'VES') {
+            Los valores en Bs se convertirán a USD usando la tasa preferida para los cálculos internos.
+          } @else {
+            Los valores se mostrarán en USD como moneda principal, con equivalentes en Bs.
+          }
+        </p>
+      </div>
+    </section>
+
+    <!-- Tasa Preferida -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--warning">
+          <span class="material-symbols-rounded">currency_exchange</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Tasa de Cambio Preferida</h2>
+          <p class="config-section__desc">Tasa usada por defecto al convertir entre USD y Bs</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="radio-group">
+          <label class="radio-card" [class.radio-card--active]="tasaPreferida() === 'BCV_USD'">
+            <input type="radio" name="tasa" value="BCV_USD"
+                   [checked]="tasaPreferida() === 'BCV_USD'"
+                   (change)="setTasa('BCV_USD')"
+                   aria-label="Tasa BCV USD">
+            <div class="radio-card__dot"></div>
+            <div class="radio-card__content">
+              <span class="radio-card__name">BCV (USD)</span>
+              <span class="radio-card__desc">Tasa oficial del Banco Central de Venezuela</span>
+            </div>
+          </label>
+          <label class="radio-card" [class.radio-card--active]="tasaPreferida() === 'BINANCE_USDT'">
+            <input type="radio" name="tasa" value="BINANCE_USDT"
+                   [checked]="tasaPreferida() === 'BINANCE_USDT'"
+                   (change)="setTasa('BINANCE_USDT')"
+                   aria-label="Tasa Binance USDT">
+            <div class="radio-card__dot"></div>
+            <div class="radio-card__content">
+              <span class="radio-card__name">Binance (USDT)</span>
+              <span class="radio-card__desc">Tasa P2P de Binance para USDT</span>
+            </div>
+          </label>
+          <label class="radio-card" [class.radio-card--active]="tasaPreferida() === 'BCV_EUR'">
+            <input type="radio" name="tasa" value="BCV_EUR"
+                   [checked]="tasaPreferida() === 'BCV_EUR'"
+                   (change)="setTasa('BCV_EUR')"
+                   aria-label="Tasa Euro BCV">
+            <div class="radio-card__dot"></div>
+            <div class="radio-card__content">
+              <span class="radio-card__name">Euro BCV</span>
+              <span class="radio-card__desc">Tasa oficial del BCV para Euros</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Decimales -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--info">
+          <span class="material-symbols-rounded">decimal_increase</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Decimales de Visualización</h2>
+          <p class="config-section__desc">Cantidad de decimales al mostrar valores monetarios</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="decimal-selector">
+          @for (d of [0, 1, 2, 3, 4]; track d) {
+            <button class="decimal-btn"
+                    [class.decimal-btn--active]="decimales() === d"
+                    (click)="setDecimales(d)">
+              {{ d }}
+            </button>
+          }
+        </div>
+        <p class="config-hint">
+          Ejemplo: {{ decimales() === 0 ? '$12' : decimales() === 1 ? '$12.5' : decimales() === 2 ? '$12.45' : decimales() === 3 ? '$12.450' : '$12.4500' }}
+        </p>
+      </div>
+    </section>
+
+    <!-- Gestión de Archivos -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--success">
+          <span class="material-symbols-rounded">folder_managed</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Gestión de Archivos</h2>
+          <p class="config-section__desc">Exporta o importa toda la base de datos local</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="backup-actions">
+          <button class="btn btn--success" (click)="exportJson()">
+            <span class="material-symbols-rounded">download</span>
+            Exportar a JSON
+          </button>
+          <button class="btn btn--secondary" (click)="triggerImport()">
+            <span class="material-symbols-rounded">upload</span>
+            Importar desde JSON
+          </button>
+          <input type="file" accept=".json" #fileInput (change)="onFileSelected($event)" style="display:none">
+        </div>
+      </div>
+    </section>
+
+    <!-- Respaldo en la Nube (Gmail) -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--purple">
+          <span class="material-symbols-rounded">cloud_upload</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">
+            Respaldo en la Nube (Gmail)
+          </h2>
+          <p class="config-section__desc">Recibe copias de seguridad automáticas en tu correo electrónico vinculado. Tus datos siempre seguros.</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="email-backup-row">
+          <div class="form-group">
+            <label>Tu correo Gmail</label>
+            <input type="email" placeholder="tucorreo@gmail.com"
+                   [ngModel]="backupEmail()" (ngModelChange)="backupEmail.set($event)">
+          </div>
+          <button class="btn btn--primary" (click)="sendEmailBackup()" [disabled]="!backupEmail()">
+            <span class="material-symbols-rounded">mail</span>
+            Enviar Respaldo a mi Correo ahora
+          </button>
+        </div>
+        <p class="config-hint">
+          <span class="material-symbols-rounded" style="font-size:14px">info</span>
+          Se descargará el archivo JSON y se abrirá tu cliente de correo para que lo adjuntes.
+        </p>
+      </div>
+    </section>
+
+  </div>
+</div>
