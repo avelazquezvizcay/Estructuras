@@ -16,18 +16,15 @@
         <h3 class="report-card__name">{{ rep.nombre }}</h3>
         <p class="report-card__desc">{{ rep.descripcion }}</p>
         <div class="report-card__actions">
-          <button class="btn btn--secondary btn--sm">
-            <span class="material-symbols-rounded">visibility</span>
-            Vista Previa
-          </button>
-          <button class="btn btn--ghost btn--sm">
-            <span class="material-symbols-rounded">download</span>
-            CSV
-          </button>
-          <button class="btn btn--ghost btn--sm">
-            <span class="material-symbols-rounded">table_view</span>
-            Excel
-          </button>
+            <button class="btn btn--ghost btn--sm" (click)="exportar('Vista Previa')">
+              <span class="material-symbols-rounded">visibility</span> Vista Previa
+            </button>
+            <button class="btn btn--ghost btn--sm" (click)="exportar('CSV')">
+              <span class="material-symbols-rounded">download</span> CSV
+            </button>
+            <button class="btn btn--ghost btn--sm" (click)="exportar('Excel')">
+              <span class="material-symbols-rounded">table_view</span> Excel
+            </button>
         </div>
       </div>
     }

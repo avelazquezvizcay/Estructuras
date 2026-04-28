@@ -1,12 +1,19 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'sec-reportes',
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './reportes.html',
   styleUrl: './reportes.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Reportes {
+  private readonly toast = inject(ToastService);
+
   protected readonly reportes = signal([
     {
       id: 'cost-structure',
@@ -51,4 +58,8 @@ export class Reportes {
       color: 'danger'
     }
   ]);
+
+  exportar(tipo: string): void {
+    this.toast.info(`La exportación a ${tipo} está en desarrollo.`);
+  }
 }

@@ -52,7 +52,7 @@ export class Presupuestos implements OnInit {
   protected readonly itemsView = computed(() => {
     return this.productosSeleccionados().map((item, index) => {
       const prod = this.productoService.getById(item.productoId);
-      return prod ? { _index: index, producto: prod } : null;
+      return prod ? { _index: index, producto: prod as unknown as ProductoFinal } : null;
     }).filter(i => i !== null) as { _index: number, producto: ProductoFinal }[];
   });
 

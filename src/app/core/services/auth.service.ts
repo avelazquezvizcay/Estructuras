@@ -30,6 +30,7 @@ const DEFAULT_MODULES: ModuleConfig[] = [
   { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
   { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin'] },
   { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master'] },
+  { id: 'asistente_ia', label: 'Asistente IA (Groq)', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
 ];
 
 const DEFAULT_MASTER: AppUser = {
@@ -65,6 +66,13 @@ export class AuthService {
       m.enabled && m.rolesAllowed.includes(user.role)
     );
   });
+
+  hasModule(moduleId: string): boolean {
+    const user = this._currentUser();
+    if (!user) return false;
+    const mod = this._modules().find(m => m.id === moduleId);
+    return mod ? (mod.enabled && mod.rolesAllowed.includes(user.role)) : false;
+  }
 
   constructor(
     private toast: ToastService,

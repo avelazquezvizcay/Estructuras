@@ -146,9 +146,9 @@
             <div class="notif-panel" (click)="$event.stopPropagation()">
               <div class="notif-panel__header">
                 <h3>Notificaciones</h3>
-                @if (notifService.hasUnread()) {
-                  <button class="notif-panel__mark-all" (click)="notifService.markAllAsRead(); showNotifPanel.set(false); $event.stopPropagation()">
-                    Marcar todo leído
+                @if (notifService.notifications().length > 0) {
+                  <button class="notif-panel__mark-all" (click)="notifService.clear(); showNotifPanel.set(false); $event.stopPropagation()">
+                    Limpiar todas
                   </button>
                 }
               </div>

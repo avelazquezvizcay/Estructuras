@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -10,9 +11,10 @@ export interface ChatMessage {
   providedIn: 'root'
 })
 export class GroqAiService {
-  // API Key proporcionada para el entorno general
-  private readonly GROQ_API_KEY = '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';
-  private readonly GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  // API Key protegida en el archivo de entorno
+  private readonly GROQ_API_KEY = environment.groqApiKey;
+  // Usar el proxy para evitar el bloqueo por CORS en el navegador
+  private readonly GROQ_API_URL = '/api/groq/openai/v1/chat/completions';
 
   // Historial de la conversación activo
   private readonly _messages = signal<ChatMessage[]>([]);
@@ -62,7 +64,7 @@ export class GroqAiService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama3-8b-8192', // Modelo rápido y eficiente de Groq
+          model: 'llama-3.1-8b-instant', // Modelo rápido y eficiente de Groq actualizado
           messages: payloadMessages,
           temperature: 0.7,
           max_tokens: 1024,

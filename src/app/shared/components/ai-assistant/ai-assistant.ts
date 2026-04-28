@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GroqAiService } from '../../core/services/groq-ai.service';
-import { AuthService } from '../../core/services/auth.service';
+import { GroqAiService } from '../../../core/services/groq-ai.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'sec-ai-assistant',
@@ -21,9 +21,9 @@ export class AiAssistantComponent implements AfterViewChecked {
   
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
-  // Solo mostrar si el usuario tiene el módulo habilitado (se asume true para el demo, pero atado a auth)
+  // Solo mostrar si el usuario tiene el módulo habilitado en Gestión de Usuarios
   protected get isEnabled(): boolean {
-    return this.auth.hasModule('asistente_ia') || true; // Temporalmente true para asegurar que se vea
+    return this.auth.hasModule('asistente_ia');
   }
 
   toggleChat(): void {

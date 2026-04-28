@@ -19,5 +19,12 @@
     "changeOrigin": true,
     "pathRewrite": { "^/api/euro": "" },
     "logLevel": "warn"
+  },
+  "/api/groq": {
+    "target": "https://api.groq.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/groq": "" },
+    "logLevel": "warn"
   }
 }

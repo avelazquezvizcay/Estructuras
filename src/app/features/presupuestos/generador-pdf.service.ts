@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ProductoFinal, Combo, TasaCambio } from '../models/domain.models';
+import { ProductoFinal, Combo, TasaCambio } from '../../core/models/domain.models';
 
 export interface PresupuestoConfig {
   incluirReceta: boolean;
@@ -83,7 +83,7 @@ export class GeneradorPdfService {
       // Tabla de Receta (Insumos) si está configurado
       if (config.incluirReceta && prod.receta && prod.receta.length > 0) {
         const recetaHeaders = ['Insumo', 'Cantidad', 'Unidad'];
-        const recetaData = prod.receta.map(item => [
+        const recetaData = prod.receta.map((item: any) => [
           item.insumoNombre || 'Desconocido', 
           item.cantidad.toString(), 
           item.unidad
