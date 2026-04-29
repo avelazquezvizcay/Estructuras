@@ -7,26 +7,78 @@
     </div>
   </div>
 
-  <div class="reports-grid stagger-children">
-    @for (rep of reportes(); track rep.id) {
-      <div class="report-card card card--interactive">
-        <div class="report-card__icon" [class]="'report-card__icon--' + rep.color">
-          <span class="material-symbols-rounded">{{ rep.icono }}</span>
+  <div class="reportes-layout">
+    <div class="reports-grid stagger-children">
+      @for (rep of reportes(); track rep.id) {
+        <div class="report-card card card--interactive" [class.report-card--active]="activeReport() === rep.id" (click)="activeReport.set(rep.id)">
+          <div class="report-card__icon" [class]="'report-card__icon--' + rep.color">
+            <span class="material-symbols-rounded">{{ rep.icono }}</span>
+          </div>
+          <div class="report-card__content">
+            <h3 class="report-card__name">{{ rep.nombre }}</h3>
+            <p class="report-card__desc">{{ rep.descripcion }}</p>
+          </div>
+          <div class="report-card__actions">
+              <button class="btn btn--ghost btn--sm" (click)="$event.stopPropagation(); exportar('CSV', rep.id)">
+                <span class="material-symbols-rounded">download</span> CSV
+              </button>
+              <button class="btn btn--ghost btn--sm" (click)="$event.stopPropagation(); exportar('Excel', rep.id)">
+                <span class="material-symbols-rounded">table_view</span> Excel
+              </button>
+          </div>
         </div>
-        <h3 class="report-card__name">{{ rep.nombre }}</h3>
-        <p class="report-card__desc">{{ rep.descripcion }}</p>
-        <div class="report-card__actions">
-            <button class="btn btn--ghost btn--sm" (click)="exportar('Vista Previa')">
-              <span class="material-symbols-rounded">visibility</span> Vista Previa
-            </button>
-            <button class="btn btn--ghost btn--sm" (click)="exportar('CSV')">
-              <span class="material-symbols-rounded">download</span> CSV
-            </button>
-            <button class="btn btn--ghost btn--sm" (click)="exportar('Excel')">
-              <span class="material-symbols-rounded">table_view</span> Excel
-            </button>
-        </div>
+      }
+    </div>
+
+    <!-- Preview Area -->
+    <div class="report-preview-panel card">
+      <div class="card__header">
+        <h2 class="card__title">Vista Previa</h2>
+        <p class="card__subtitle">Selecciona un reporte para ver un resumen rápido.</p>
       </div>
-    }
+      <div class="card__content">
+        @if (activeReport() === 'inventory-value') {
+          <div class="preview-stats">
+            <div class="stat-box">
+              <span class="stat-label">Inversión Total</span>
+              <span class="stat-value">${{ totalInventarioUsd().toFixed(2) }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Insumos en Stock</span>
+              <span class="stat-value">{{ totalInsumosStock() }}</span>
+            </div>
+          </div>
+        } @else if (activeReport() === 'profit-projection' || activeReport() === 'margin-analysis') {
+          <div class="preview-stats">
+            <div class="stat-box">
+              <span class="stat-label">Margen Promedio</span>
+              <span class="stat-value">{{ promedioMargen() }}%</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Ganancia Promedio</span>
+              <span class="stat-value">${{ utilidadPromedioUsd().toFixed(2) }}</span>
+            </div>
+          </div>
+          <p class="preview-hint" style="margin-top: 15px; text-align: center; font-size: 12px; color: var(--text-tertiary);">
+            Este análisis se basa en el Precio al Detal de tus {{ productoService.productos().length }} productos.
+          </p>
+        } @else if (activeReport() === 'cost-structure') {
+          <div class="preview-placeholder">
+            <span class="material-symbols-rounded">pie_chart</span>
+            <p>Se analizarán {{ productoService.productos().length }} estructuras de costos.</p>
+          </div>
+        } @else if (activeReport() === 'price-inflation') {
+          <div class="preview-placeholder">
+            <span class="material-symbols-rounded">trending_up</span>
+            <p>Se detectaron variaciones en {{ totalInsumosConInflacion() }} insumos este mes.</p>
+          </div>
+        } @else {
+          <div class="empty-preview">
+            <span class="material-symbols-rounded">analytics</span>
+            <p>Haz clic en un reporte de la izquierda para ver el análisis.</p>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 </div>

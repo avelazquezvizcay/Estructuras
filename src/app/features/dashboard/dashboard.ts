@@ -1,85 +1,211 @@
 import { ChangeDetectionStrategy, Component, signal, computed, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TasaCambioService } from '../../core/services/tasa-cambio.service';
+import { InsumoService } from '../../core/services/insumo.service';
+import { ProductoService } from '../../core/services/producto.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { DashboardKpi } from '../../core/models/domain.models';
+
+import { RouterLink } from '@angular/router';
+import { ChartComponent } from '../../shared/components/chart/chart';
+import { ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'sec-dashboard',
-  imports: [FormsModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink, ChartComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Dashboard {
   protected readonly tasaService = inject(TasaCambioService);
+  protected readonly insumoService = inject(InsumoService);
+  protected readonly productoService = inject(ProductoService);
+  protected readonly notifService = inject(NotificationService);
 
-  protected readonly kpis = signal<DashboardKpi[]>([
+  protected readonly kpis = computed<DashboardKpi[]>(() => [
     {
       label: 'Productos Registrados',
-      value: '24',
-      subvalue: '3 nuevos este mes',
+      value: this.productoService.count().toString(),
+      subvalue: 'Activos en catálogo',
       icon: 'bakery_dining',
       trend: 'up',
-      trendValue: '+14%',
+      trendValue: '',
       color: 'primary'
     },
     {
       label: 'Insumos Activos',
-      value: '87',
-      subvalue: '12 categorías',
+      value: this.insumoService.count().toString(),
+      subvalue: `${this.insumoService.categorias().length - 1} categorías`,
       icon: 'inventory_2',
       trend: 'up',
-      trendValue: '+6',
+      trendValue: '',
       color: 'success'
     },
     {
       label: 'Costo Promedio',
-      value: '$12.45',
+      value: `$${this.productoService.promedioCosto().toFixed(2)}`,
       subvalue: 'por producto',
       icon: 'trending_up',
-      trend: 'down',
-      trendValue: '-2.3%',
+      trend: 'neutral',
+      trendValue: '',
       color: 'warning'
     },
     {
       label: 'Margen Promedio',
-      value: '42%',
+      value: `${this.productoService.promedioMargen().toFixed(0)}%`,
       subvalue: 'de utilidad',
       icon: 'percent',
-      trend: 'up',
-      trendValue: '+1.5%',
+      trend: 'neutral',
+      trendValue: '',
       color: 'info'
     }
-  ]);
-
-  protected readonly topProductos = signal([
-    { nombre: 'Torta de Chocolate 1kg', costo: 8.50, venta: 14.45, margen: 70 },
-    { nombre: 'Pan de Jamón 500g', costo: 5.20, venta: 8.84, margen: 70 },
-    { nombre: 'Galletas de Avena x12', costo: 3.80, venta: 6.08, margen: 60 },
-    { nombre: 'Brownie Premium', costo: 6.10, venta: 10.37, margen: 70 },
-    { nombre: 'Cheesecake 1.5kg', costo: 12.30, venta: 22.14, margen: 80 },
   ]);
 
   protected readonly filtroProductos = signal<'mayor_margen' | 'menor_costo'>('mayor_margen');
 
   protected readonly productosFiltrados = computed(() => {
-    const prods = [...this.topProductos()];
-    if (this.filtroProductos() === 'mayor_margen') {
-      return prods.sort((a, b) => b.margen - a.margen);
-    } else {
-      return prods.sort((a, b) => a.costo - b.costo);
-    }
+    return this.filtroProductos() === 'mayor_margen' 
+      ? this.productoService.topPorMargen() 
+      : this.productoService.menorCosto();
   });
 
-  protected readonly topInsumos = signal([
-    { nombre: 'Harina de Trigo', categoria: 'Harinas', usos: 18, costoBase: '$0.0012/g' },
-    { nombre: 'Azúcar Refinada', categoria: 'Endulzantes', usos: 16, costoBase: '$0.0008/g' },
-    { nombre: 'Huevos', categoria: 'Proteínas', usos: 15, costoBase: '$0.25/unid' },
-    { nombre: 'Mantequilla', categoria: 'Lácteos', usos: 14, costoBase: '$0.0095/g' },
-    { nombre: 'Leche Entera', categoria: 'Lácteos', usos: 12, costoBase: '$0.0018/ml' },
-  ]);
+  protected readonly topInsumos = computed(() => {
+    return this.insumoService.insumos().slice(0, 5).map(i => ({
+      nombre: i.nombre,
+      categoria: i.categoria,
+      costo: `$${i.costoUnidadBaseUsd.toFixed(4)}/${i.unidadBase}`
+    }));
+  });
+
+  protected readonly chartCostos = computed<ChartConfiguration>(() => {
+    const prods = this.productoService.productos().slice(0, 7);
+    return {
+      type: 'bar',
+      data: {
+        labels: prods.map(p => p.nombre.length > 15 ? p.nombre.substring(0, 12) + '...' : p.nombre),
+        datasets: [
+          {
+            label: 'Costo (USD)',
+            data: prods.map(p => p.costoTotalUsd.toNumber()),
+            backgroundColor: 'rgba(99, 102, 241, 0.5)',
+            borderColor: '#6366f1',
+            borderWidth: 1
+          },
+          {
+            label: 'Venta (USD)',
+            data: prods.map(p => parseFloat(p.precios[0]?.precioUsd || '0')),
+            backgroundColor: 'rgba(34, 197, 94, 0.5)',
+            borderColor: '#22c55e',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    };
+  });
+
+  protected readonly chartCategorias = computed<ChartConfiguration>(() => {
+    const counts: Record<string, number> = {};
+    this.productoService.productos().forEach(p => {
+      counts[p.categoria] = (counts[p.categoria] || 0) + 1;
+    });
+
+    return {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(counts),
+        datasets: [{
+          data: Object.values(counts),
+          backgroundColor: [
+            '#6366f1', '#22c55e', '#f59e0b', '#06b6d4', '#a855f7', '#ef4444'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    };
+  });
+
+  protected readonly chartRentabilidad = computed<ChartConfiguration>(() => {
+    const prods = this.productoService.productos().slice(0, 5);
+    return {
+      type: 'radar',
+      data: {
+        labels: prods.map(p => p.nombre),
+        datasets: [
+          {
+            label: 'Margen (%)',
+            data: prods.map(p => parseFloat(p.precios[0]?.margenPct || '0')),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+          },
+          {
+            label: 'Costo Relativo (x10)',
+            data: prods.map(p => p.costoTotalUsd.toNumber() * 10),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    };
+  });
+
+  protected readonly chartTendenciaTasas = computed<ChartConfiguration>(() => {
+    return {
+      type: 'line',
+      data: {
+        labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
+        datasets: [
+          {
+            label: 'BCV (Bs)',
+            data: [78.5, 79.2, 80.1, 82.5, 84.0, 85.2, 86.89],
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: 'Binance (Bs)',
+            data: [80.1, 81.5, 82.0, 85.0, 86.2, 88.0, 89.5],
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            fill: true,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    };
+  });
 
   protected readonly actividadReciente = signal([
+
     { tipo: 'update', texto: 'Se actualizó el costo de Harina de Trigo', tiempo: 'Hace 2 horas', icono: 'edit', color: 'primary' },
     { tipo: 'create', texto: 'Nuevo producto: Brownie Premium', tiempo: 'Hace 5 horas', icono: 'add_circle', color: 'success' },
     { tipo: 'rate', texto: 'Tasa BCV actualizada a 86.89 Bs/$', tiempo: 'Hace 8 horas', icono: 'currency_exchange', color: 'warning' },

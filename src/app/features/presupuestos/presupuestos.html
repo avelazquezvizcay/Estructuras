@@ -1,66 +1,31 @@
 <div class="presupuestos-page">
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Presupuestos</h1>
-      <p class="page-header__subtitle">Crea cotizaciones seleccionando productos y niveles de precio</p>
+      <h1 class="page-header__title">Simulador de Producción y Presupuestos</h1>
+      <p class="page-header__subtitle">Calcula materiales necesarios y costos de inversión antes de producir.</p>
     </div>
     <div class="page-header__actions">
-      <button class="btn btn--secondary btn--sm" (click)="toggleMoneda()">
-        <span class="material-symbols-rounded">swap_horiz</span>
-        {{ monedaDisplay() }}
-      </button>
       <button class="btn btn--secondary" (click)="limpiar()">
         <span class="material-symbols-rounded">refresh</span>
-        Limpiar
+        Reiniciar
       </button>
       <button class="btn btn--primary" (click)="generarPdf()">
         <span class="material-symbols-rounded">picture_as_pdf</span>
-        Exportar PDF
+        Exportar Catálogo
       </button>
     </div>
   </div>
 
   <div class="presupuesto-grid">
-    <!-- Main Form -->
+    <!-- Main Form: Configuración del Pedido -->
     <div class="presupuesto-main card">
-      <!-- Client info -->
-      <div class="form-row form-row--2col" style="margin-bottom: var(--space-6)">
-        <div class="form-group">
-          <label>Nombre del Cliente / Empresa (Para el membrete)</label>
-          <input type="text" placeholder="Ej. Comercializadora ABC" [ngModel]="clienteNombre()" (ngModelChange)="clienteNombre.set($event)">
-        </div>
+      <div class="card__header">
+        <h2 class="card__title">Configuración del Pedido (Simulación)</h2>
+        <p class="card__subtitle">Selecciona los productos y las cantidades que planeas producir.</p>
       </div>
 
-      <!-- PDF Options Configuration -->
-      <div class="builder-header">
-        <h3 class="builder-title">Configuración del Documento</h3>
-      </div>
-      
-      <div class="pdf-config-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); background: var(--bg-surface); padding: var(--space-4); border-radius: 12px; border: 1px solid var(--border-primary);">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" [ngModel]="configPdf().incluirReceta" (ngModelChange)="updateConfig('incluirReceta', $event)">
-          <span>Incluir Receta (Insumos ocultos o visibles)</span>
-        </label>
-        
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioDetal" (ngModelChange)="updateConfig('mostrarPrecioDetal', $event)">
-          <span>Mostrar Precio al Detal</span>
-        </label>
-        
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioMayor" (ngModelChange)="updateConfig('mostrarPrecioMayor', $event)">
-          <span>Mostrar Precio al Mayor</span>
-        </label>
-        
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" [ngModel]="configPdf().mostrarPrecioGranMayor" (ngModelChange)="updateConfig('mostrarPrecioGranMayor', $event)">
-          <span>Mostrar Precio al Gran Mayor</span>
-        </label>
-      </div>
-
-      <!-- Items builder -->
-      <div class="builder-header">
-        <h3 class="builder-title">Productos a Incluir</h3>
+      <div class="builder-header" style="margin-top: 20px;">
+        <h3 class="builder-title">Productos a Producir</h3>
         <button class="btn btn--secondary btn--sm" (click)="addItem()">
           <span class="material-symbols-rounded">add</span>
           Agregar Producto
@@ -69,54 +34,74 @@
 
       <div class="items-list">
         @for (item of itemsView(); track item._index; let i = $index) {
-          <div class="item-row" style="align-items: center;">
-            <div class="item-row__main">
-              <div class="form-group" style="flex: 1">
-                <select [ngModel]="item.producto.id" (ngModelChange)="updateItem(i, $event)">
-                  @for (prod of productoService.productos(); track prod.id) {
-                    <option [value]="prod.id">{{ prod.nombre }}</option>
-                  }
-                </select>
-              </div>
+          <div class="item-row animate-fade-in-up" style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 16px;">
+            <div class="form-group" style="flex: 2">
+              <label>Producto</label>
+              <select [ngModel]="item.producto.id" (ngModelChange)="updateItem(i, 'productoId', $event)">
+                @for (p of productoService.productos(); track p.id) {
+                  <option [value]="p.id">{{ p.nombre }}</option>
+                }
+              </select>
             </div>
-            
-            <div class="item-row__footer" style="margin-top: 0;">
-              <button class="btn btn--ghost btn--icon item-row__remove" (click)="removeItem(i)" aria-label="Remover">
-                <span class="material-symbols-rounded">close</span>
-              </button>
+            <div class="form-group" style="flex: 1">
+              <label>Cantidad</label>
+              <input type="number" min="1" [ngModel]="item.cantidad" (ngModelChange)="updateItem(i, 'cantidad', $event)">
             </div>
+            <button class="btn btn--ghost btn--icon" (click)="removeItem(i)" style="margin-bottom: 8px;">
+              <span class="material-symbols-rounded">close</span>
+            </button>
           </div>
         }
         @if (productosSeleccionados().length === 0) {
           <div class="empty-state">
-            <span class="material-symbols-rounded">list_alt_add</span>
-            <div class="empty-state__title">No hay productos</div>
-            <div class="empty-state__description">Agrega productos para armar el documento</div>
+            <span class="material-symbols-rounded">playlist_add</span>
+            <div class="empty-state__title">No hay productos en la simulación</div>
+            <p>Agrega productos para calcular los materiales.</p>
           </div>
         }
       </div>
     </div>
 
-    <!-- Summary Sidebar -->
+    <!-- Resultados de la Simulación -->
     <div class="presupuesto-sidebar">
-      <div class="card summary-card sticky">
-        <h3 class="summary-card__title">Resumen de Exportación</h3>
-        
-        <div class="summary-card__body">
-          <div class="summary-row">
-            <span>Productos a listar</span>
-            <span>{{ productosSeleccionados().length }}</span>
-          </div>
-          <div class="summary-row">
-            <span>Formato</span>
-            <span>Catálogo PDF</span>
-          </div>
+      <div class="card simulation-summary-card">
+        <div class="card__header">
+          <h2 class="card__title">Resumen de Materiales</h2>
+          <p class="card__subtitle">Consolidado para todo el pedido</p>
         </div>
 
-        <button class="btn btn--primary btn--lg summary-btn" (click)="generarPdf()">
-          <span class="material-symbols-rounded">share</span>
-          Generar y Compartir PDF
-        </button>
+        <div class="materials-list">
+          @for (m of materialesConsolidados(); track m.insumoId) {
+            <div class="material-item" [class.material-item--missing]="!m.tieneSuficiente">
+              <div class="material-item__info">
+                <span class="material-item__name">{{ m.nombre }}</span>
+                <span class="material-item__qty">Necesitas: <strong>{{ m.cantidad.toFixed(2) }} {{ m.unidad }}</strong></span>
+              </div>
+              <div class="material-item__status">
+                @if (m.tieneSuficiente) {
+                  <span class="badge badge--success">En Stock</span>
+                } @else {
+                  <span class="badge badge--danger">Faltan {{ m.falta.toFixed(2) }}</span>
+                }
+              </div>
+            </div>
+          }
+          @if (materialesConsolidados().length === 0) {
+            <div class="empty-hint">Los materiales necesarios aparecerán aquí.</div>
+          }
+        </div>
+
+        <div class="simulation-total">
+          <div class="total-row">
+            <span>Inversión necesaria:</span>
+            <span class="total-value">${{ costoTotalSimulado().toFixed(2) }}</span>
+          </div>
+          @if (costoTotalSimulado() > 0) {
+            <p class="total-hint">
+              Estimado para comprar lo que falta en inventario.
+            </p>
+          }
+        </div>
       </div>
     </div>
   </div>

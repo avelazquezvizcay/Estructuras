@@ -116,4 +116,64 @@ export class ExportService {
 
     doc.save(`Ficha_${product.nombre.replace(/\s+/g, '_')}.pdf`);
   }
+
+  /**
+   * Exporta un array de arrays a un archivo CSV
+   */
+  exportToCsv(filename: string, rows: string[][]): void {
+    const csvContent = rows.map(row => 
+      row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(",")
+    ).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Exporta un array de arrays a un archivo PDF
+   */
+  exportToPdf(filename: string, title: string, headers: string[], rows: string[][]): void {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(37, 99, 235);
+    doc.text('SEC - ' + title, 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Generado el ${new Date().toLocaleDateString()}`, 14, 26);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [headers],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontSize: 9 },
+      styles: { fontSize: 8, textColor: [17, 24, 39] }
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(156, 163, 175);
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        doc.internal.pageSize.width - 30,
+        doc.internal.pageSize.height - 10
+      );
+    }
+
+    doc.save(`${filename}.pdf`);
+  }
 }

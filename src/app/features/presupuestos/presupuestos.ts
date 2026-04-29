@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal, computed, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../core/services/producto.service';
+import { InsumoService } from '../../core/services/insumo.service';
 import { TasaCambioService } from '../../core/services/tasa-cambio.service';
 import { I18nService } from '../../core/services/i18n.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -24,6 +25,7 @@ interface PresupuestoItem {
 })
 export class Presupuestos implements OnInit {
   protected readonly productoService = inject(ProductoService);
+  protected readonly insumoService = inject(InsumoService);
   protected readonly tasaService = inject(TasaCambioService);
   protected readonly i18n = inject(I18nService);
   protected readonly generadorPdfService = inject(GeneradorPdfService);
@@ -35,9 +37,10 @@ export class Presupuestos implements OnInit {
   protected readonly notasPresupuesto = signal('Presupuesto válido por 5 días hábiles.');
   
   // Lista de IDs de productos seleccionados
-  protected readonly productosSeleccionados = signal<{productoId: string}[]>([]);
+  protected readonly productosSeleccionados = signal<{productoId: string; cantidad: number}[]>([]);
   
   protected readonly monedaDisplay = signal<'USD' | 'VES'>('USD');
+  protected readonly showSimulacion = signal(true); // Siempre mostrar simulacion por defecto
 
   // Opciones del PDF
   protected readonly configPdf = signal<PresupuestoConfig>({
@@ -52,8 +55,8 @@ export class Presupuestos implements OnInit {
   protected readonly itemsView = computed(() => {
     return this.productosSeleccionados().map((item, index) => {
       const prod = this.productoService.getById(item.productoId);
-      return prod ? { _index: index, producto: prod as unknown as ProductoFinal } : null;
-    }).filter(i => i !== null) as { _index: number, producto: ProductoFinal }[];
+      return prod ? { _index: index, producto: prod, cantidad: item.cantidad } : null;
+    }).filter(i => i !== null) as { _index: number, producto: any, cantidad: number }[];
   });
 
   ngOnInit(): void {
@@ -70,7 +73,7 @@ export class Presupuestos implements OnInit {
     }
     this.productosSeleccionados.update(list => [
       ...list,
-      { productoId: productos[0].id }
+      { productoId: productos[0].id, cantidad: 1 }
     ]);
   }
 
@@ -78,13 +81,58 @@ export class Presupuestos implements OnInit {
     this.productosSeleccionados.update(list => list.filter((_, i) => i !== index));
   }
 
-  updateItem(index: number, productoId: string): void {
+  updateItem(index: number, field: 'productoId' | 'cantidad', value: string | number): void {
     this.productosSeleccionados.update(list => {
       const newList = [...list];
-      newList[index] = { productoId };
+      newList[index] = { ...newList[index], [field]: value };
       return newList;
     });
   }
+
+  /**
+   * Calcula la suma consolidada de todos los materiales necesarios
+   */
+  protected readonly materialesConsolidados = computed(() => {
+    const consolidado: Record<string, { nombre: string; cantidad: Decimal; unidad: string; insumoId: string }> = {};
+
+    for (const item of this.productosSeleccionados()) {
+      const prod = this.productoService.getById(item.productoId);
+      if (!prod) continue;
+
+      for (const r of prod.receta) {
+        const cantTotal = r.cantidad.mul(item.cantidad);
+        if (consolidado[r.insumoId]) {
+          consolidado[r.insumoId].cantidad = consolidado[r.insumoId].cantidad.plus(cantTotal);
+        } else {
+          consolidado[r.insumoId] = {
+            insumoId: r.insumoId,
+            nombre: r.insumoNombre,
+            cantidad: cantTotal,
+            unidad: r.unidad
+          };
+        }
+      }
+    }
+
+    // Comparar con el stock actual de InsumoService
+    return Object.values(consolidado).map(m => {
+      const insumo = this.insumoService.getById(m.insumoId);
+      const stockActual = insumo?.stockActual || 0;
+      const falta = Decimal.max(0, m.cantidad.minus(stockActual));
+      
+      return {
+        ...m,
+        stockActual,
+        falta: falta.toNumber(),
+        tieneSuficiente: falta.isZero(),
+        costoFaltante: insumo ? falta.mul(insumo.costoUnidadBaseUsd).toNumber() : 0
+      };
+    });
+  });
+
+  protected readonly costoTotalSimulado = computed(() => {
+    return this.materialesConsolidados().reduce((sum, m) => sum + m.costoFaltante, 0);
+  });
 
   updateConfig(key: keyof PresupuestoConfig, value: boolean | string): void {
     this.configPdf.update(c => ({ ...c, [key]: value }));

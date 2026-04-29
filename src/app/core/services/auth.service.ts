@@ -27,6 +27,8 @@ const DEFAULT_MODULES: ModuleConfig[] = [
   { id: 'insumos', label: 'Insumos', icon: 'inventory_2', route: '/insumos', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
   { id: 'productos', label: 'Productos', icon: 'bakery_dining', route: '/productos', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
   { id: 'presupuestos', label: 'Presupuestos', icon: 'request_quote', route: '/presupuestos', enabled: true, rolesAllowed: ['master', 'admin'] },
+  { id: 'compras', label: 'Compras / Facturas', icon: 'receipt_long', route: '/compras', enabled: true, rolesAllowed: ['master', 'admin'] },
+  { id: 'inventario_masivo', label: 'Inventario Masivo', icon: 'inventory', route: '/inventario-masivo', enabled: true, rolesAllowed: ['master', 'admin'] },
   { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
   { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin'] },
   { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master'] },

@@ -59,11 +59,13 @@
               {{ i18n.t('productos.cost') }}: {{ formatPrice(prod.costoTotalUsd) }}
               · {{ prod.receta.length }} {{ i18n.t('productos.inputs') }}
             </div>
-
             <div class="product-card__actions">
+              <button class="btn btn--secondary btn--sm" (click)="openProduccionModal(prod)">
+                <span class="material-symbols-rounded">precision_manufacturing</span>
+                Producir
+              </button>
               <button class="btn btn--ghost btn--sm" (click)="openDetailModal(prod)">
                 <span class="material-symbols-rounded">visibility</span>
-                {{ i18n.t('productos.view') }}
               </button>
               <button class="btn btn--ghost btn--sm" (click)="openShareModal(prod)">
                 <span class="material-symbols-rounded">share</span>
@@ -121,6 +123,9 @@
               <td>{{ prod.receta.length }}</td>
               <td>
                 <div class="action-btns">
+                  <button class="btn btn--secondary btn--icon" (click)="openProduccionModal(prod)" title="Registrar Producción">
+                    <span class="material-symbols-rounded">precision_manufacturing</span>
+                  </button>
                   <button class="btn btn--ghost btn--icon" (click)="openDetailModal(prod)" aria-label="Ver">
                     <span class="material-symbols-rounded">visibility</span>
                   </button>
@@ -397,3 +402,48 @@
     </div>
   </sec-modal>
 }
+
+<!-- ═══ Registrar Producción Modal ═══ -->
+@if (showProduccionModal() && selectedProduct(); as prod) {
+  <sec-modal title="Registrar Producción" maxWidth="480px" (closed)="showProduccionModal.set(false)">
+    <div class="produccion-form">
+      <div class="produccion-form__header">
+        <span class="material-symbols-rounded">precision_manufacturing</span>
+        <div>
+          <div class="produccion-form__name">{{ prod.nombre }}</div>
+          <div class="produccion-form__meta">Registra cuántas unidades produciste para descontar insumos.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="pCant">Cantidad Producida (en {{ prod.rendimientoUnidad }})</label>
+        <div class="input-with-action">
+          <input id="pCant" type="number" min="1" step="any"
+                 [ngModel]="produccionCantidad()" (ngModelChange)="produccionCantidad.set($event)">
+          <span class="input-suffix">{{ prod.rendimientoUnidad }}</span>
+        </div>
+      </div>
+
+      <div class="recipe-preview">
+        <div class="recipe-preview__title">Se descontará del inventario:</div>
+        <div class="recipe-preview__list">
+          @for (item of prod.receta; track item.id) {
+            <div class="recipe-preview__item">
+              <span>{{ item.insumoNombre }}</span>
+              <strong>{{ (item.cantidad.toNumber() * produccionCantidad()).toFixed(2) }} {{ item.unidad }}</strong>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--secondary" (click)="showProduccionModal.set(false)">{{ i18n.t('common.cancel') }}</button>
+        <button class="btn btn--primary" (click)="executeProduccion()">
+          <span class="material-symbols-rounded">check</span>
+          Confirmar Producción
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}
+

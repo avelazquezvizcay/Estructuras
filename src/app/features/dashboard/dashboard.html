@@ -7,11 +7,11 @@
       <p class="page-header__subtitle">Resumen general del sistema de costos</p>
     </div>
     <div class="page-header__actions">
-      <button class="btn btn--secondary">
+      <button class="btn btn--secondary" (click)="notifService.add('Exportación', 'La exportación general del dashboard está en desarrollo', 'info')">
         <span class="material-symbols-rounded">download</span>
         Exportar
       </button>
-      <button class="btn btn--primary">
+      <button class="btn btn--primary" routerLink="/productos">
         <span class="material-symbols-rounded">add</span>
         Nuevo Producto
       </button>
@@ -80,9 +80,76 @@
       Actualizado hace 2 horas
     </div>
   </section>
+  
+  <!-- ═══ Charts Section ═══ -->
+  <div class="charts-grid animate-fade-in-up" style="animation-delay: 50ms">
+    <section class="card chart-card">
+      <div class="card__header">
+        <h2 class="card__title">Costo vs Precio de Venta</h2>
+        <p class="card__subtitle">Comparativa de los primeros 7 productos</p>
+      </div>
+      <div class="card__content">
+        <sec-chart [config]="chartCostos()"></sec-chart>
+      </div>
+    </section>
+
+    <section class="card chart-card">
+      <div class="card__header">
+        <h2 class="card__title">Mix de Categorías</h2>
+        <p class="card__subtitle">Distribución de productos por rubro</p>
+      </div>
+      <div class="card__content">
+        <sec-chart [config]="chartCategorias()"></sec-chart>
+      </div>
+    </section>
+  </div>
 
   <!-- ═══ Content Grid ═══ -->
   <div class="content-grid">
+
+    <!-- Low Stock Alerts (New) -->
+    @if (insumoService.lowStockInsumos().length > 0) {
+      <section class="card card--full alert-card animate-fade-in-up">
+        <div class="alert-card__header">
+          <span class="material-symbols-rounded">warning</span>
+          <div>
+            <h2 class="alert-card__title">Alertas de Inventario</h2>
+            <p class="alert-card__subtitle">Insumos por debajo del stock mínimo</p>
+          </div>
+        </div>
+        <div class="alert-card__list">
+          @for (ins of insumoService.lowStockInsumos(); track ins.id) {
+            <div class="alert-item">
+              <span class="alert-item__name">{{ ins.nombre }}</span>
+              <span class="alert-item__stock">Actual: <strong>{{ ins.stockActual }} {{ ins.unidadBase }}</strong></span>
+              <span class="alert-item__min">Mínimo: {{ ins.stockMinimo }} {{ ins.unidadBase }}</span>
+              <button class="btn btn--primary btn--sm" routerLink="/insumos">Reponer</button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Advanced Analytics (New) -->
+    <section class="card animate-fade-in-up">
+      <div class="card__header">
+        <h2 class="card__title">Rentabilidad Radar</h2>
+        <p class="card__subtitle">Margen vs Costo (Top 5)</p>
+      </div>
+      <div class="card__content" style="height: 350px;">
+        <sec-chart [config]="chartRentabilidad()"></sec-chart>
+      </div>
+    </section>
+
+    <section class="card animate-fade-in-up">
+      <div class="card__header">
+        <h2 class="card__title">Tendencia de Tasas</h2>
+        <p class="card__subtitle">Variación semanal BCV/Binance</p>
+      </div>
+      <div class="card__content" style="height: 350px;">
+        <sec-chart [config]="chartTendenciaTasas()"></sec-chart>
+      </div>
+    </section>
 
     <!-- Top Productos -->
     <section class="card animate-fade-in-up" aria-label="Productos destacados">
@@ -108,12 +175,14 @@
             <div class="product-row__info">
               <span class="product-row__name">{{ prod.nombre }}</span>
               <span class="product-row__meta">
-                Costo: <strong class="currency-value currency-value--usd">${{ prod.costo.toFixed(2) }}</strong>
+                Costo: <strong class="currency-value currency-value--usd">${{ prod.costoTotalUsd.toFixed(2) }}</strong>
               </span>
             </div>
             <div class="product-row__right">
-              <span class="product-row__price currency-value currency-value--usd">${{ prod.venta.toFixed(2) }}</span>
-              <span class="badge badge--success">{{ prod.margen }}%</span>
+              <span class="product-row__price currency-value currency-value--usd">
+                ${{ (prod.precios[0]?.precioUsd || '0') }}
+              </span>
+              <span class="badge badge--success">{{ (prod.precios[0]?.margenPct || '0') }}%</span>
             </div>
           </div>
         }
@@ -139,8 +208,7 @@
               <span class="insumo-row__meta">{{ ins.categoria }}</span>
             </div>
             <div class="insumo-row__right">
-              <span class="insumo-row__uses">{{ ins.usos }} recetas</span>
-              <span class="insumo-row__cost">{{ ins.costoBase }}</span>
+              <span class="insumo-row__cost">{{ ins.costo }}</span>
             </div>
           </div>
         }

@@ -1,0 +1,170 @@
+<div class="compras-page">
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Compras y Facturas</h1>
+      <p class="page-header__subtitle">Registra tus compras para actualizar stock y precios automáticamente.</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--primary" (click)="openNuevaCompra()">
+        <span class="material-symbols-rounded">add_shopping_cart</span>
+        Cargar Factura
+      </button>
+    </div>
+  </div>
+
+  <div class="compras-grid stagger-children">
+    @for (compra of compraService.compras(); track compra.id) {
+      <div class="compra-card card">
+        <div class="compra-card__header">
+          <div class="compra-info">
+            <span class="compra-date">{{ compra.fecha }}</span>
+            <h3 class="compra-vendor">{{ compra.proveedor }}</h3>
+          </div>
+          <div class="compra-total">
+            <span class="total-usd">${{ compra.totalUsd }}</span>
+            <span class="total-bs">{{ compra.totalBes }} Bs</span>
+          </div>
+        </div>
+        <div class="compra-items-preview">
+          @for (item of parseItems(compra.items).slice(0, 3); track item.insumoId) {
+            <span class="item-tag">{{ item.cantidad }}x {{ item.nombre }}</span>
+          }
+          @if (parseItems(compra.items).length > 3) {
+            <span class="item-tag">... y {{ parseItems(compra.items).length - 3 }} más</span>
+          }
+        </div>
+      </div>
+    }
+    @if (compraService.compras().length === 0) {
+      <div class="empty-state">
+        <span class="material-symbols-rounded">receipt_long</span>
+        <h3>No hay compras registradas</h3>
+        <p>Tus facturas aparecerán aquí una vez que las cargues.</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Modal de Carga de Factura -->
+@if (showModal()) {
+  <sec-modal title="Registrar Nueva Factura" maxWidth="900px" (closed)="showModal.set(false)">
+    <div class="carga-factura">
+      
+      <!-- IA Action -->
+      <div class="ia-banner">
+        <div class="ia-info">
+          <span class="material-symbols-rounded">auto_awesome</span>
+          <div>
+            <strong>¿Quieres ahorrar tiempo?</strong>
+            <p>Sube una foto de tu factura y yo leeré los datos por ti (OCR Local).</p>
+          </div>
+        </div>
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+        <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
+          @if (isScanning()) {
+            <span class="loader-spinner"></span> Procesando...
+          } @else {
+            <span class="material-symbols-rounded">photo_camera</span> Seleccionar Foto
+          }
+        </button>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="form-group">
+          <label>Proveedor</label>
+          <input type="text" [ngModel]="formProveedor()" (ngModelChange)="formProveedor.set($event)" placeholder="Ej. Distribuidora Polar">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Compra</label>
+          <input type="date" [ngModel]="formFecha()" (ngModelChange)="formFecha.set($event)">
+        </div>
+        <div class="form-group">
+          <label>Tasa de Cambio (Bs/USD)</label>
+          <input type="number" step="0.01" [ngModel]="formTasa()" (ngModelChange)="formTasa.set($event)" placeholder="Tasa usada en la compra">
+        </div>
+        <div class="form-group">
+          <label>Método de Pago</label>
+          <select [ngModel]="formMetodoPago()" (ngModelChange)="formMetodoPago.set($event)">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Zelle">Zelle / Pago Móvil</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="items-builder">
+        <div class="builder-header">
+          <h4>Artículos en la Factura</h4>
+          <button class="btn btn--secondary btn--sm" (click)="addItem()">
+            <span class="material-symbols-rounded">add</span> Agregar Fila
+          </button>
+        </div>
+
+        <table class="builder-table">
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Cantidad</th>
+              <th>Costo Unit. (USD)</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of formItems(); track $index; let i = $index) {
+              <tr class="animate-fade-in">
+                <td>
+                  <div class="insumo-select-wrapper">
+                    <select [ngModel]="item.insumoId" (ngModelChange)="updateItem(i, 'insumoId', $event)">
+                      <option [value]="undefined" disabled>-- Seleccionar Insumo --</option>
+                      @for (ins of insumoService.insumos(); track ins.id) {
+                        <option [value]="ins.id">{{ ins.nombre }}</option>
+                      }
+                    </select>
+                    @if (!item.insumoId) {
+                      <div class="new-item-badge">
+                        <span class="material-symbols-rounded">fiber_new</span>
+                        <span>{{ item.nombre }} (Nuevo)</span>
+                      </div>
+                      
+                      @if (item.sugerenciaId) {
+                        <div class="suggestion-box animate-fade-in">
+                          <span class="material-symbols-rounded">lightbulb</span>
+                          <div class="suggestion-text">
+                            ¿Es lo mismo que <strong>{{ item.sugerenciaNombre }}</strong>?
+                          </div>
+                          <button class="btn btn--primary btn--sm" (click)="aceptarSugerencia(i)">Sí, es el mismo</button>
+                        </div>
+                      }
+                    }
+                  </div>
+                </td>
+                <td><input type="number" min="0.01" [ngModel]="item.cantidad" (ngModelChange)="updateItem(i, 'cantidad', $event)"></td>
+                <td><input type="number" min="0" [ngModel]="item.costoUnitarioUsd" (ngModelChange)="updateItem(i, 'costoUnitarioUsd', $event)"></td>
+                <td class="subtotal-cell">${{ item.subtotalUsd }}</td>
+                <td>
+                  <button class="btn btn--ghost btn--icon" (click)="removeItem(i)">
+                    <span class="material-symbols-rounded">close</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-footer">
+        <div class="grand-total">
+          <span>Total de la Factura:</span>
+          <strong>${{ totalCompraUsd().toFixed(2) }}</strong>
+        </div>
+        <div class="footer-actions">
+          <button class="btn btn--ghost" (click)="showModal.set(false)">Cancelar</button>
+          <button class="btn btn--primary" (click)="guardarCompra()" [disabled]="formItems().length === 0">
+            Confirmar y Actualizar Inventario
+          </button>
+        </div>
+      </div>
+    </div>
+  </sec-modal>
+}

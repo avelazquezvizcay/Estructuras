@@ -40,6 +40,16 @@ export const routes: Routes = [
         title: 'Tasas de Cambio — SEC'
       },
       {
+        path: 'compras',
+        loadComponent: () => import('./features/compras/compras').then(m => m.Compras),
+        title: 'Compras y Facturas — SEC'
+      },
+      {
+        path: 'inventario-masivo',
+        loadComponent: () => import('./features/inventario-masivo/inventario-masivo').then(m => m.InventarioMasivo),
+        title: 'Inventario Masivo — SEC'
+      },
+      {
         path: 'reportes',
         loadComponent: () => import('./features/reportes/reportes').then(m => m.Reportes),
         title: 'Reportes — SEC'

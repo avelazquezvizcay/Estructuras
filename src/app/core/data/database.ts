@@ -13,6 +13,36 @@ export interface InsumoRecord {
   monedaRegistro: 'USD' | 'VES'; // En qué moneda se registró el costo
   proveedor: string;
   fechaActualizacionCosto: string;
+  stockActual: number;
+  stockMinimo: number;
+}
+
+export interface HistoricoPrecioInsumoRecord {
+  id?: number;
+  insumoId: string;
+  costoUnidadBaseUsd: string;
+  fecha: string;
+}
+
+export interface PresupuestoRecord {
+  id?: string;
+  clienteNombre: string;
+  contacto: string;
+  fecha: string;
+  items: string; // JSON array
+  config: string; // JSON config
+  totalUsd: string;
+}
+
+export interface CompraRecord {
+  id?: string;
+  proveedor: string;
+  fecha: string;
+  items: string; // JSON array [{insumoId, cantidad, costoUnitarioUsd, subtotalUsd}]
+  tasaUsd: number;
+  totalUsd: string;
+  totalBes: string;
+  metodoPago: string;
 }
 
 export interface ProductoRecord {
@@ -61,6 +91,9 @@ export class SecDatabase extends Dexie {
   itemsReceta!: Table<ItemRecetaRecord, string>;
   tasasCambio!: Table<TasaCambioRecord, string>;
   tasaHistorial!: Table<TasaHistorialRecord, number>;
+  historicoPrecios!: Table<HistoricoPrecioInsumoRecord, number>;
+  presupuestos!: Table<PresupuestoRecord, string>;
+  compras!: Table<CompraRecord, string>;
 
   constructor() {
     super('SecDatabase');
@@ -72,12 +105,15 @@ export class SecDatabase extends Dexie {
       tasasCambio: 'id, tipo, esActiva, fecha'
     });
 
-    this.version(2).stores({
-      insumos: 'id, nombre, categoria, tipoMedida',
-      productos: 'id, nombre, categoria',
-      itemsReceta: 'id, productoFinalId, insumoId',
-      tasasCambio: 'id, tipo, esActiva, fecha',
-      tasaHistorial: '++id, fecha, source'
+    this.version(5).stores({
+      insumos: '++id, nombre, categoria, proveedor',
+      productos: '++id, nombre, categoria',
+      itemsReceta: '++id, productoFinalId, insumoId',
+      historicoPrecios: '++id, insumoId, fecha',
+      presupuestos: '++id, clienteNombre, fecha',
+      tasasCambio: '++id, tipo, fecha',
+      tasaHistorial: '++id, fecha',
+      compras: '++id, proveedor, fecha, totalUsd'
     });
   }
 }

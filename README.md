@@ -34,13 +34,15 @@ npm run build
 ## 5. 📦 Funcionalidades Principales Activas
 - **Dashboard & KPIs:** Vista general de costos, insumos y márgenes.
 - **Gestión de Tasas:** Múltiples fuentes (BCV Oficial, Binance P2P, DolarAPI) con modo offline (historial en Dexie.js).
-- **Presupuestos & Exportación:** Selección de productos en combo y generación de PDFs formales (jsPDF).
-- **Asistente Virtual IA:** Integración nativa con Groq (Llama 3) para soporte y preguntas frecuentes.
-- **Respaldos (Backups):** Exportación en JSON y envíos seguros vía Gmail.
+- **Carga de Facturas con IA:** Lectura automática de facturas mediante Gemini Pro (Visión) para extraer fecha, proveedor, insumos y aplicar la tasa correspondiente automáticamente.
+- **Generación de Reportes PDF:** Exportación nativa de Estructura de Costos, Valorización de Inventario e Historial de Inflación directamente a PDF.
+- **Simulador de Producción:** Cálculo dinámico de costos por lote.
+- **Presupuestos & Exportación:** Selección de productos en combo y generación de PDFs formales.
+- **Asistente Virtual IA:** Integración con IA para soporte en costos.
+- **Respaldos (Backups):** Exportación en JSON y envíos seguros.
 
 ## 6. 📝 Documentación Adicional
-Para detalles más profundos sobre el funcionamiento de la app o gestión de contenidos (por hacer):
 - **[DOCUMENTACION.md](./DOCUMENTACION.md):** Arquitectura técnica, lógica de versiones y base de datos local Dexie.
 
 ---
-*Documento autogenerado para administración del proyecto.*
+*Fin de Fase 1. Sistema listo para Producción.*

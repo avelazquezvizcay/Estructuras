@@ -29,6 +29,8 @@ export class Productos implements OnInit {
   protected readonly showDetailModal = signal(false);
   protected readonly showShareModal = signal(false);
   protected readonly showDeleteConfirm = signal(false);
+  protected readonly showProduccionModal = signal(false);
+  protected readonly produccionCantidad = signal(1);
   protected readonly selectedProduct = signal<ProductoView | null>(null);
   protected readonly deletingProduct = signal<ProductoView | null>(null);
   protected readonly monedaDisplay = signal<'USD' | 'VES'>('USD');
@@ -226,6 +228,20 @@ export class Productos implements OnInit {
       this.toast.info('Compartir cancelado o no disponible');
     }
     this.showShareModal.set(false);
+  }
+
+  openProduccionModal(product: ProductoView): void {
+    this.selectedProduct.set(product);
+    this.produccionCantidad.set(product.rendimientoCantidad || 1);
+    this.showProduccionModal.set(true);
+  }
+
+  async executeProduccion(): Promise<void> {
+    const p = this.selectedProduct();
+    if (!p) return;
+    
+    await this.productoService.registrarProduccion(p.id, this.produccionCantidad());
+    this.showProduccionModal.set(false);
   }
 
   private resetForm(): void {

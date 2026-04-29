@@ -1,15 +1,18 @@
 import { ChangeDetectionStrategy, Component, signal, computed, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Modal } from '../../shared/modal/modal';
 import { InsumoService, InsumoView } from '../../core/services/insumo.service';
 import { TasaCambioService } from '../../core/services/tasa-cambio.service';
 import { I18nService } from '../../core/services/i18n.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ChartConfiguration } from 'chart.js';
+import { ChartComponent } from '../../shared/components/chart/chart';
 import Decimal from 'decimal.js';
 
 @Component({
   selector: 'sec-insumos',
-  imports: [FormsModule, Modal],
+  imports: [CommonModule, FormsModule, Modal, ChartComponent],
   templateUrl: './insumos.html',
   styleUrl: './insumos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -37,6 +40,9 @@ export class Insumos implements OnInit {
   protected readonly formCosto = signal('');
   protected readonly formMoneda = signal<'USD' | 'VES'>('USD');
   protected readonly formProveedor = signal('');
+  protected readonly formStockActual = signal(0);
+  protected readonly formStockMinimo = signal(0);
+  protected readonly priceHistory = signal<{fecha: string, costo: number}[]>([]);
 
   protected readonly filteredInsumos = computed(() => {
     let list = this.insumoService.insumos();
@@ -84,6 +90,32 @@ export class Insumos implements OnInit {
     return '';
   });
 
+  protected readonly chartTrendConfig = computed<ChartConfiguration | null>(() => {
+    const history = this.priceHistory();
+    if (history.length < 1) return null;
+
+    return {
+      type: 'line',
+      data: {
+        labels: history.map(h => h.fecha),
+        datasets: [{
+          label: 'Costo Unitario (USD)',
+          data: history.map(h => h.costo),
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: false } }
+      }
+    };
+  });
+
   ngOnInit(): void {
     this.insumoService.seedIfEmpty();
   }
@@ -106,7 +138,17 @@ export class Insumos implements OnInit {
     this.formCosto.set(insumo.costoPresentacionUsd.toString());
     this.formMoneda.set(insumo.monedaRegistro);
     this.formProveedor.set(insumo.proveedor);
+    this.formStockActual.set(insumo.stockActual);
+    this.formStockMinimo.set(insumo.stockMinimo);
     this.showModal.set(true);
+    
+    // Cargar historial
+    this.insumoService.getPriceHistory(insumo.id).then(history => {
+      this.priceHistory.set(history.map(h => ({
+        fecha: h.fecha.split('T')[0],
+        costo: parseFloat(h.costoUnidadBaseUsd)
+      })));
+    });
   }
 
   confirmDelete(insumo: InsumoView): void {
@@ -155,7 +197,9 @@ export class Insumos implements OnInit {
       costoPresentacionUsd: costoUsd,
       monedaRegistro: this.formMoneda(),
       proveedor: this.formProveedor(),
-      fechaActualizacionCosto: new Date().toISOString()
+      fechaActualizacionCosto: new Date().toISOString(),
+      stockActual: this.formStockActual(),
+      stockMinimo: this.formStockMinimo()
     };
 
     const editId = this.editingId();
@@ -188,6 +232,8 @@ export class Insumos implements OnInit {
     this.formCosto.set('');
     this.formMoneda.set('USD');
     this.formProveedor.set('');
+    this.formStockActual.set(0);
+    this.formStockMinimo.set(0);
   }
 
   formatCostBase(insumo: InsumoView): string {

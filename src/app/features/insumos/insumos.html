@@ -48,6 +48,8 @@
             <th>{{ i18n.t('insumos.col.presentation') }}</th>
             <th>{{ i18n.t('insumos.col.costPresentation') }}</th>
             <th>{{ i18n.t('insumos.col.baseCost') }}</th>
+            <th>Stock Actual</th>
+            <th>Mínimo</th>
             <th>{{ i18n.t('insumos.col.supplier') }}</th>
             <th>{{ i18n.t('insumos.col.updated') }}</th>
             <th>{{ i18n.t('insumos.col.actions') }}</th>
@@ -73,6 +75,12 @@
               <td>
                 <span class="cost-base-chip">{{ formatCostBase(ins) }}</span>
               </td>
+              <td>
+                <span class="stock-badge" [class.stock-badge--low]="ins.isLowStock">
+                  {{ ins.stockActual }} {{ ins.unidadBase }}
+                </span>
+              </td>
+              <td class="text-muted">{{ ins.stockMinimo }}</td>
               <td class="text-muted">{{ ins.proveedor || '—' }}</td>
               <td class="text-muted">{{ ins.fecha }}</td>
               <td>
@@ -145,6 +153,20 @@
         </div>
       </div>
 
+      <h4 class="form-section-title">Control de Inventario</h4>
+      <div class="form-row form-row--2col">
+        <div class="form-group">
+          <label for="stockActual">Stock Actual (en {{ formUnidadBase() }})</label>
+          <input id="stockActual" type="number" step="any"
+                 [ngModel]="formStockActual()" (ngModelChange)="formStockActual.set($event)" name="stockActual">
+        </div>
+        <div class="form-group">
+          <label for="stockMinimo">Stock Mínimo (Alerta)</label>
+          <input id="stockMinimo" type="number" step="any"
+                 [ngModel]="formStockMinimo()" (ngModelChange)="formStockMinimo.set($event)" name="stockMinimo">
+        </div>
+      </div>
+
       <div class="form-row form-row--3col">
         <div class="form-group">
           <label for="tipoMedida">Tipo de medida</label>
@@ -194,6 +216,15 @@
           </select>
         </div>
       </div>
+
+      <!-- Price Trend Chart (New) -->
+      @if (chartTrendConfig(); as config) {
+        <div class="form-divider"></div>
+        <h4 class="form-section-title">Tendencia de Precio</h4>
+        <div class="trend-chart-container" style="height: 150px; margin-bottom: var(--space-4);">
+          <sec-chart [config]="config"></sec-chart>
+        </div>
+      }
 
       @if (costoConvertido()) {
         <div class="form-conversion-hint">

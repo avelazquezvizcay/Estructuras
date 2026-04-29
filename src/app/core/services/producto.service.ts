@@ -17,6 +17,8 @@ export interface ProductoView {
   descripcion: string;
   categoria: string;
   rendimiento: string;
+  rendimientoCantidad: number;
+  rendimientoUnidad: string;
   costoTotalUsd: Decimal;
   precios: PrecioVenta[];
   receta: RecetaItemView[];
@@ -166,6 +168,37 @@ export class ProductoService {
     this.toast.success(`Producto "${data.nombre}" creado exitosamente`);
   }
 
+  /**
+   * Registra la producción de un producto y descuenta los insumos del inventario
+   */
+  async registrarProduccion(id: string, cantidadAProducir: number): Promise<void> {
+    const producto = this.getById(id);
+    if (!producto) return;
+
+    this._loading.set(true);
+    try {
+      // 1. Verificar si hay stock suficiente de todos los insumos (Opcional, pero recomendado)
+      // Por ahora procederemos con el descuento directo.
+
+      for (const item of producto.receta) {
+        const cantidadTotalADescontar = item.cantidad.mul(cantidadAProducir).toNumber();
+        const insumo = await db.insumos.get(item.insumoId);
+        
+        if (insumo) {
+          const nuevoStock = (insumo.stockActual || 0) - cantidadTotalADescontar;
+          await this.insumoService.update(item.insumoId, { stockActual: nuevoStock });
+        }
+      }
+
+      this.toast.success(`Producción registrada: ${cantidadAProducir} unidades de "${producto.nombre}". Inventario actualizado.`);
+    } catch (e) {
+      this.toast.error('Error al registrar la producción');
+      console.error(e);
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
   async delete(id: string): Promise<void> {
     const producto = this._productos().find(p => p.id === id);
     await db.itemsReceta.where('productoFinalId').equals(id).delete();
@@ -211,6 +244,8 @@ export class ProductoService {
       descripcion: r.descripcion,
       categoria: r.categoria,
       rendimiento: `${r.rendimientoCantidad} ${r.rendimientoUnidad}`,
+      rendimientoCantidad: r.rendimientoCantidad,
+      rendimientoUnidad: r.rendimientoUnidad,
       costoTotalUsd: costoTotal,
       precios: this.calcularPrecios(costoTotal, {
         detalle: margenDetalle,

@@ -494,7 +494,7 @@ img { max-width: 100%; display: block; }
   padding: var(--space-12) var(--space-6);
   text-align: center;
 
-  .material-symbols-rounded { font-size: 56px; color: var(--text-muted); margin-bottom: var(--space-4); }
+  > .material-symbols-rounded { font-size: 56px; color: var(--text-muted); margin-bottom: var(--space-4); }
   &__title { font-size: var(--text-lg); font-weight: 600; color: var(--text-secondary); margin-bottom: var(--space-2); }
   &__description { font-size: var(--text-sm); color: var(--text-tertiary); max-width: 360px; margin-bottom: var(--space-6); }
 }
