@@ -60,7 +60,9 @@
               "rgbcolor",
               "html2canvas",
               "jspdf",
-              "core-js"
+              "core-js",
+              "tesseract.js",
+              "raf"
             ]
           },
           "configurations": {
