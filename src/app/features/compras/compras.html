@@ -121,7 +121,7 @@
             </div>
           </div>
           <div class="ia-actions" style="display: flex; gap: 1rem; align-items: center;">
-            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" capture="environment" style="display: none">
             <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
               @if (isScanning()) {
                 <span class="loader-spinner"></span> Procesando...

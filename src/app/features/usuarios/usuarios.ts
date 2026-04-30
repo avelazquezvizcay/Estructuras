@@ -40,6 +40,7 @@ export class Usuarios {
   protected readonly genTipo = signal<LicenseType>('trial');
   protected readonly genDias = signal(30);
   protected readonly genHardwareId = signal('');
+  protected readonly genSelectedModules = signal<string[]>([]);
   protected readonly generatedKey = signal('');
 
   protected readonly history = this.licenseService.history;
@@ -163,9 +164,16 @@ export class Usuarios {
       return;
     }
     const hId = this.genHardwareId() || 'ALL';
-    const key = this.licenseService.generateKey(this.genEmpresa(), this.genTipo(), this.genDias(), hId);
+    const modules = this.genSelectedModules();
+    const key = this.licenseService.generateKey(this.genEmpresa(), this.genTipo(), this.genDias(), hId, modules);
     this.generatedKey.set(key);
     this.toast.success('Licencia generada correctamente');
+  }
+
+  toggleLicenseModule(moduleId: string): void {
+    this.genSelectedModules.update(list => 
+      list.includes(moduleId) ? list.filter(id => id !== moduleId) : [...list, moduleId]
+    );
   }
 
   async onRifSelected(event: any): Promise<void> {

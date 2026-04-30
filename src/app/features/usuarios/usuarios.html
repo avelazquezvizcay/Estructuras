@@ -147,7 +147,7 @@
                   <button type="button" class="btn btn--secondary btn--icon-only" (click)="rifInput.click()" title="Cargar desde RIF">
                     <span class="material-symbols-rounded">image</span>
                   </button>
-                  <input #rifInput type="file" hidden accept="image/*" (change)="onRifSelected($event)">
+                  <input #rifInput type="file" hidden accept="image/*" capture="environment" (change)="onRifSelected($event)">
                 }
               </div>
             </div>
@@ -171,6 +171,28 @@
               <label>Duración (Días)</label>
               <input type="number" [ngModel]="genDias()" (ngModelChange)="genDias.set($event)" name="genDias" [disabled]="genTipo() !== 'trial'">
             </div>
+          </div>
+
+          <!-- Selección de Módulos para la Licencia -->
+          <div class="form-group" style="margin-top: 1rem;">
+            <label style="margin-bottom: 0.5rem; display: block;">Módulos Incluidos en Licencia</label>
+            <div class="modules-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+              @for (mod of auth.modules(); track mod.id) {
+                <label class="module-check-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">
+                  <input type="checkbox" 
+                         [checked]="genSelectedModules().includes(mod.id)"
+                         (change)="toggleLicenseModule(mod.id)">
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 13px; font-weight: 600;">{{ mod.name }}</span>
+                    <span style="font-size: 11px; color: var(--text-secondary);">{{ mod.description }}</span>
+                  </div>
+                </label>
+              }
+            </div>
+            <p class="config-hint" style="margin-top: 0.5rem;">
+              <span class="material-symbols-rounded" style="font-size: 14px;">info</span>
+              Si es un plan <b>FULL</b> y no marcas nada, se habilitarán todos los módulos por defecto.
+            </p>
           </div>
 
           <button type="submit" class="btn btn--primary btn--full" style="margin-top: 1rem;">

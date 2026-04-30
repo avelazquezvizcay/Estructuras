@@ -8,6 +8,7 @@ export interface LicenseInfo {
   tipo: LicenseType;
   expira: number; // timestamp
   key: string;
+  modules: string[]; // IDs de módulos habilitados
 }
 
 export interface LicenseHistoryItem {
@@ -16,6 +17,7 @@ export interface LicenseHistoryItem {
   hardwareId: string;
   fecha: number;
   key: string;
+  modules?: string[];
 }
 
 @Injectable({
@@ -79,7 +81,8 @@ export class LicenseService {
         empresa: 'ACCESO MAESTRO',
         tipo: 'full',
         expira: 0,
-        key: 'MASTER_BYPASS'
+        key: 'MASTER_BYPASS',
+        modules: ['*'] // Todos
       };
       this._license.set(info);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(info));
@@ -98,7 +101,8 @@ export class LicenseService {
         empresa: parsed.empresa,
         tipo: parsed.tipo,
         expira: parsed.expira,
-        key: key
+        key: key,
+        modules: parsed.modules || []
       };
       
       this._license.set(info);
@@ -126,19 +130,29 @@ export class LicenseService {
 
   private parseKey(key: string): any {
     try {
-      // Formato esperado: base64(empresa|tipo|expira|hardwareId|hash)
+      // Formato esperado: base64(empresa|tipo|expira|hardwareId|modules|hash)
       const decoded = atob(key);
-      const [empresa, tipo, expira, hardwareId, hash] = decoded.split('|');
+      const parts = decoded.split('|');
       
-      // Validar el hash incluyendo el hardwareId
-      const expectedHash = btoa(empresa + hardwareId + this.SECRET).substring(0, 8);
+      // Manejar retrocompatibilidad si no hay campo modules
+      let empresa, tipo, expira, hardwareId, modulesStr, hash;
+      if (parts.length === 6) {
+        [empresa, tipo, expira, hardwareId, modulesStr, hash] = parts;
+      } else {
+        [empresa, tipo, expira, hardwareId, hash] = parts;
+        modulesStr = '*'; // Por defecto acceso total para llaves viejas
+      }
+      
+      // Validar el hash incluyendo el hardwareId y los módulos
+      const expectedHash = btoa(empresa + hardwareId + modulesStr + this.SECRET).substring(0, 8);
       if (hash !== expectedHash) return null;
       
       return {
         empresa,
         tipo: tipo as LicenseType,
         expira: parseInt(expira),
-        hardwareId
+        hardwareId,
+        modules: modulesStr === '*' ? ['*'] : modulesStr.split(',').filter(m => !!m)
       };
     } catch {
       return null;
@@ -146,10 +160,14 @@ export class LicenseService {
   }
 
   // Generar llaves vinculadas a un equipo específico
-  generateKey(empresa: string, tipo: LicenseType, dias: number = 30, hId: string = 'ALL'): string {
+  generateKey(empresa: string, tipo: LicenseType, dias: number = 30, hId: string = 'ALL', modules: string[] = []): string {
     const expira = tipo === 'venta' || tipo === 'full' ? 0 : Date.now() + (dias * 24 * 60 * 60 * 1000);
-    const hash = btoa(empresa + hId + this.SECRET).substring(0, 8);
-    const raw = `${empresa}|${tipo}|${expira}|${hId}|${hash}`;
+    
+    // Si es full, por defecto tiene todos los módulos
+    const modulesStr = (tipo === 'full' && modules.length === 0) ? '*' : modules.join(',');
+    
+    const hash = btoa(empresa + hId + modulesStr + this.SECRET).substring(0, 8);
+    const raw = `${empresa}|${tipo}|${expira}|${hId}|${modulesStr}|${hash}`;
     const key = btoa(raw);
 
     // Guardar en historial
@@ -158,7 +176,8 @@ export class LicenseService {
       tipo,
       hardwareId: hId,
       fecha: Date.now(),
-      key
+      key,
+      modules: modules.length > 0 ? modules : (tipo === 'full' ? ['*'] : [])
     };
     const currentHistory = [newItem, ...this._history()];
     this._history.set(currentHistory);

@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
 import { SqliteDatabaseService } from './sqlite-database.service';
+import { LicenseService } from './license.service';
 
 export type UserRole = 'master' | 'admin' | 'supervisor' | 'user';
 
@@ -79,9 +80,22 @@ export class AuthService {
     );
   });
 
+  private readonly licenseService = inject(LicenseService);
+
   hasModule(moduleId: string): boolean {
     const user = this._currentUser();
     if (!user) return false;
+
+    // 1. Verificar Módulos de la Licencia
+    const lic = this.licenseService.license();
+    if (lic) {
+      // Si la licencia tiene '*' tiene acceso a todo lo que su rol le permita
+      // Si no tiene '*', debe estar el ID en la lista
+      const hasLicenceAccess = lic.modules.includes('*') || lic.modules.includes(moduleId);
+      if (!hasLicenceAccess) return false;
+    }
+
+    // 2. Verificar Permisos por Rol
     const mod = this._modules().find(m => m.id === moduleId);
     return mod ? (mod.enabled && mod.rolesAllowed.includes(user.role)) : false;
   }
