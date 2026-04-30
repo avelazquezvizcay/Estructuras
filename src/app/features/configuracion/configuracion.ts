@@ -9,6 +9,7 @@ import { GroqAiService } from '../../core/services/groq-ai.service';
 import { GeminiAiService } from '../../core/services/gemini-ai.service';
 import { LicenseService } from '../../core/services/license.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { AuthService } from '../../core/services/auth.service';
 import { createWorker } from 'tesseract.js';
 import { environment } from '../../../environments/environment';
 
@@ -27,6 +28,7 @@ export class Configuracion {
   private readonly geminiAi = inject(GeminiAiService);
   protected readonly licenseService = inject(LicenseService);
   protected readonly settingsService = inject(SettingsService);
+  protected readonly auth = inject(AuthService);
   protected readonly isScanningRif = signal(false);
   protected readonly nuevoMetodo = signal('');
 

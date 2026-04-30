@@ -36,18 +36,20 @@
               <button class="btn btn--secondary btn--sm" (click)="logoInput.click()">Subir Logo</button>
             </div>
 
-            <div class="rif-scan-wrapper" style="margin-left: auto; border-left: 1px solid var(--border-color); padding-left: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-              <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">¿Ahorrar tiempo?</span>
-              <input type="file" accept="image/*" #rifInput (change)="onRifFileSelected($event)" style="display: none;">
-              <button class="btn btn--primary btn--sm" (click)="rifInput.click()" [disabled]="isScanningRif()">
-                @if (isScanningRif()) {
-                  <span class="loader-spinner"></span> Analizando...
-                } @else {
-                  <span class="material-symbols-rounded">scan</span> Leer datos desde RIF
-                }
-              </button>
-              <p style="font-size: 10px; color: var(--text-tertiary); margin: 0;">Soporta: JPG, PNG (Fotos)</p>
-            </div>
+            @if (auth.hasModule('ia_rif')) {
+              <div class="rif-scan-wrapper" style="margin-left: auto; border-left: 1px solid var(--border-color); padding-left: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">¿Ahorrar tiempo?</span>
+                <input type="file" accept="image/*" #rifInput (change)="onRifFileSelected($event)" style="display: none;">
+                <button class="btn btn--primary btn--sm" (click)="rifInput.click()" [disabled]="isScanningRif()">
+                  @if (isScanningRif()) {
+                    <span class="loader-spinner"></span> Analizando...
+                  } @else {
+                    <span class="material-symbols-rounded">scan</span> Leer datos desde RIF
+                  }
+                </button>
+                <p style="font-size: 10px; color: var(--text-tertiary); margin: 0;">Soporta: JPG, PNG (Fotos)</p>
+              </div>
+            }
           </div>
 
           <div class="form-group">
