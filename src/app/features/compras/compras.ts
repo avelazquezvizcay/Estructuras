@@ -11,6 +11,7 @@ import { createWorker } from 'tesseract.js';
 import { GroqAiService } from '../../core/services/groq-ai.service';
 import { GeminiAiService } from '../../core/services/gemini-ai.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -28,6 +29,7 @@ export class Compras implements OnInit {
   private readonly groqAi = inject(GroqAiService);
   private readonly geminiAi = inject(GeminiAiService);
   protected readonly settingsService = inject(SettingsService);
+  protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
   // UI State
