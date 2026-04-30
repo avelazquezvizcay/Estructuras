@@ -54,6 +54,13 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "rgbcolor",
+              "html2canvas",
+              "jspdf",
+              "core-js"
             ]
           },
           "configurations": {
