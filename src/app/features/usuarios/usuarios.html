@@ -22,6 +22,10 @@
       <span class="material-symbols-rounded">apps</span>
       Módulos
     </button>
+    <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'licensing'" (click)="activeTab.set('licensing')">
+      <span class="material-symbols-rounded">key</span>
+      Generador de Licencias
+    </button>
   </div>
 
   <!-- ═══ Users Tab ═══ -->
@@ -52,17 +56,26 @@
                         [ngModel]="user.role" (ngModelChange)="changeRole(user, $event)"
                         [disabled]="user.role === 'master'">
                   <option value="master">Master</option>
-                  <option value="admin">Admin</option>
+                  <option value="admin">Administrador</option>
+                  <option value="supervisor">Supervisor</option>
                   <option value="user">Usuario</option>
                 </select>
               </td>
               <td class="cell-date">{{ formatDate(user.createdAt) }}</td>
               <td>
-                @if (user.role !== 'master') {
-                  <button class="btn btn--ghost btn--icon" (click)="deleteUser(user)" aria-label="Eliminar">
-                    <span class="material-symbols-rounded">delete</span>
+                <div class="action-btns">
+                  <button class="btn btn--ghost btn--icon" (click)="openEdit(user)" title="Editar Usuario">
+                    <span class="material-symbols-rounded">edit</span>
                   </button>
-                }
+                  <button class="btn btn--ghost btn--icon" (click)="openPasswordReset(user.id)" title="Restablecer Contraseña">
+                    <span class="material-symbols-rounded">lock_reset</span>
+                  </button>
+                  @if (user.role !== 'master') {
+                    <button class="btn btn--ghost btn--icon btn--danger-text" (click)="deleteUser(user)" aria-label="Eliminar" title="Eliminar Usuario">
+                      <span class="material-symbols-rounded">delete</span>
+                    </button>
+                  }
+                </div>
               </td>
             </tr>
           }
@@ -71,8 +84,9 @@
     </div>
   }
 
-  <!-- ═══ Modules Tab ═══ -->
+  <!-- ... (Modules and Licensing Tabs remain same) ... -->
   @if (activeTab() === 'modules') {
+    <!-- Contenido de módulos... -->
     <div class="modules-grid">
       @for (mod of auth.modules(); track mod.id) {
         <div class="module-card card" [class.module-card--disabled]="!mod.enabled">
@@ -97,6 +111,10 @@
                 <span>Admin</span>
               </label>
               <label class="checkbox-sm" [class.checkbox-sm--disabled]="!mod.enabled">
+                <input type="checkbox" [checked]="mod.rolesAllowed.includes('supervisor')" (change)="toggleModuleRole(mod, 'supervisor')" [disabled]="!mod.enabled">
+                <span>Supervisor</span>
+              </label>
+              <label class="checkbox-sm" [class.checkbox-sm--disabled]="!mod.enabled">
                 <input type="checkbox" [checked]="mod.rolesAllowed.includes('user')" (change)="toggleModuleRole(mod, 'user')" [disabled]="!mod.enabled">
                 <span>Usuario</span>
               </label>
@@ -104,6 +122,112 @@
           </div>
         </div>
       }
+    </div>
+  }
+
+  @if (activeTab() === 'licensing') {
+    <!-- Contenido de licencias... -->
+    <div class="licensing-container">
+      <div class="card licensing-card">
+        <div class="licensing-card__header">
+          <span class="material-symbols-rounded">shield</span>
+          <h2>Generar Nueva Licencia</h2>
+        </div>
+        <p class="licensing-card__desc">Crea códigos de activación offline para nuevos clientes o instalaciones.</p>
+        
+        <form class="licensing-form" (ngSubmit)="generateLicense()">
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Nombre de la Empresa</label>
+              <input type="text" [ngModel]="genEmpresa()" (ngModelChange)="genEmpresa.set($event)" name="genEmpresa" placeholder="Nombre de la Empresa">
+            </div>
+            <div class="form-group">
+              <label>Código de Equipo (Hardware ID)</label>
+              <input type="text" [ngModel]="genHardwareId()" (ngModelChange)="genHardwareId.set($event)" name="genHardwareId" placeholder="Ej. X8Y2-Z4A1... o ALL">
+            </div>
+          </div>
+          
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Tipo de Plan</label>
+              <select [ngModel]="genTipo()" (ngModelChange)="genTipo.set($event)" name="genTipo">
+                <option value="trial">Trial (Prueba)</option>
+                <option value="venta">Venta (Pago Único)</option>
+                <option value="full">Full (Nuestra Empresa)</option>
+              </select>
+            </div>
+            
+            <div class="form-group" [style.opacity]="genTipo() === 'trial' ? 1 : 0.5">
+              <label>Duración (Días)</label>
+              <input type="number" [ngModel]="genDias()" (ngModelChange)="genDias.set($event)" name="genDias" [disabled]="genTipo() !== 'trial'">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--full" style="margin-top: 1rem;">
+            <span class="material-symbols-rounded">token</span>
+            Generar Código de Activación
+          </button>
+        </form>
+
+        @if (generatedKey()) {
+          <div class="generated-key-section">
+            <label>Código Generado:</label>
+            <div class="key-box">
+              <pre>{{ generatedKey() }}</pre>
+              <button class="btn btn--secondary btn--sm" (click)="copyKey()">
+                <span class="material-symbols-rounded">content_copy</span>
+              </button>
+            </div>
+            <p class="key-hint">Envía este código al cliente para que lo pegue en la pantalla de activación.</p>
+          </div>
+        }
+      </div>
+
+      <div class="licensing-history-card">
+        <div class="licensing-card__header">
+          <span class="material-symbols-rounded">history</span>
+          <h2>Historial de Licencias Generadas</h2>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Empresa</th>
+                <th>Tipo</th>
+                <th>Equipo (Hardware ID)</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of history(); track item.key) {
+                <tr>
+                  <td class="cell-date">{{ item.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td><strong>{{ item.empresa }}</strong></td>
+                  <td>
+                    <span class="badge" [class]="'badge--' + (item.tipo === 'full' ? 'purple' : item.tipo === 'venta' ? 'primary' : 'warning')">
+                      {{ item.tipo | uppercase }}
+                    </span>
+                  </td>
+                  <td><span class="hardware-id-sm">{{ item.hardwareId }}</span></td>
+                  <td>
+                    <button class="btn btn--ghost btn--icon" (click)="copyExistingKey(item.key)" title="Copiar Código">
+                      <span class="material-symbols-rounded">content_copy</span>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    No se han generado licencias aún.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   }
 </div>
@@ -135,7 +259,8 @@
         <div class="form-group">
           <label>Rol</label>
           <select [ngModel]="newRole()" (ngModelChange)="newRole.set($event)" name="role">
-            <option value="admin">Admin</option>
+            <option value="admin">Administrador</option>
+            <option value="supervisor">Supervisor</option>
             <option value="user">Usuario</option>
           </select>
         </div>
@@ -147,6 +272,78 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- ═══ Edit User Modal ═══ -->
+@if (showEditModal()) {
+  <div class="modal-overlay" (click)="showEditModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card__header">
+        <h2>Editar Usuario</h2>
+        <button class="btn btn--ghost btn--icon" (click)="showEditModal.set(false)">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <form class="modal-form" (ngSubmit)="saveUserEdit()">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)" name="eName" required>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" [ngModel]="editEmail()" (ngModelChange)="editEmail.set($event)" name="eEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select [ngModel]="editRole()" (ngModelChange)="editRole.set($event)" name="eRole" [disabled]="selectedUser()?.role === 'master'">
+            <option value="master">Master</option>
+            <option value="admin">Administrador</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="user">Usuario</option>
+          </select>
+        </div>
+        <div class="modal-form__actions">
+          <button type="button" class="btn btn--secondary" (click)="showEditModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn--primary">
+            <span class="material-symbols-rounded">save</span>
+            Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ═══ Reset Password Modal ═══ -->
+@if (showPasswordModal()) {
+  <div class="modal-overlay" (click)="showPasswordModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card__header">
+        <h2>Restablecer Contraseña</h2>
+        <button class="btn btn--ghost btn--icon" (click)="showPasswordModal.set(false)">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <div class="modal-form">
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 1rem;">
+          Ingresa la nueva contraseña para el usuario seleccionado.
+        </p>
+        <div class="form-group">
+          <label>Nueva Contraseña</label>
+          <input type="password" placeholder="Nueva clave" [ngModel]="newPasswordReset()" (ngModelChange)="newPasswordReset.set($event)" name="newPass">
+        </div>
+        <div class="modal-form__actions">
+          <button type="button" class="btn btn--secondary" (click)="showPasswordModal.set(false)">Cancelar</button>
+          <button type="button" class="btn btn--primary" (click)="confirmPasswordReset()">
+            <span class="material-symbols-rounded">lock_reset</span>
+            Actualizar
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 }

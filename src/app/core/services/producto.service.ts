@@ -1,8 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import Decimal from 'decimal.js';
-import { db, type ProductoRecord, type ItemRecetaRecord } from '../data/database';
+import { type ProductoRecord, type ItemRecetaRecord } from '../data/database';
 import { ToastService } from './toast.service';
 import { InsumoService } from './insumo.service';
+import { SqliteDatabaseService } from './sqlite-database.service';
 
 export interface PrecioVenta {
   nivel: 'detalle' | 'mayor' | 'super_mayor';
@@ -85,7 +86,8 @@ export class ProductoService {
 
   constructor(
     private toast: ToastService,
-    private insumoService: InsumoService
+    private insumoService: InsumoService,
+    private sqlite: SqliteDatabaseService
   ) {
     this.loadAll();
   }
@@ -93,11 +95,14 @@ export class ProductoService {
   async loadAll(): Promise<void> {
     this._loading.set(true);
     try {
-      const records = await db.productos.toArray();
+      const records = await this.sqlite.all<ProductoRecord>('SELECT * FROM productos ORDER BY nombre ASC');
       const views: ProductoView[] = [];
 
       for (const r of records) {
-        const recetaItems = await db.itemsReceta.where('productoFinalId').equals(r.id!).toArray();
+        const recetaItems = await this.sqlite.all<ItemRecetaRecord>(
+          'SELECT * FROM items_receta WHERE productoFinalId = ?', 
+          [r.id]
+        );
         views.push(this.toView(r, recetaItems));
       }
 
@@ -119,7 +124,7 @@ export class ProductoService {
     notas: string;
     receta: { insumoId: string; cantidad: string; unidad: string }[];
   }): Promise<void> {
-    const id = crypto.randomUUID();
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
 
     // Calculate recipe cost
     let costoTotal = new Decimal(0);
@@ -133,7 +138,7 @@ export class ProductoService {
       costoTotal = costoTotal.plus(costoLinea);
 
       recetaRecords.push({
-        id: crypto.randomUUID(),
+        id: Date.now().toString(36) + Math.random().toString(36).substring(2),
         productoFinalId: id,
         insumoId: item.insumoId,
         cantidad: item.cantidad,
@@ -158,37 +163,47 @@ export class ProductoService {
       notas: data.notas
     };
 
-    await db.productos.put(record);
-    for (const ri of recetaRecords) {
-      await db.itemsReceta.put(ri);
-    }
+    const statements = [
+      {
+        sql: `INSERT INTO productos (id, nombre, descripcion, categoria, rendimientoCantidad, rendimientoUnidad, margenUtilidadPct, costoTotalUsd, precioVentaUsd, notas) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          record.id, record.nombre, record.descripcion, record.categoria, 
+          record.rendimientoCantidad, record.rendimientoUnidad, record.margenUtilidadPct, 
+          record.costoTotalUsd, record.precioVentaUsd, record.notas
+        ]
+      },
+      ...recetaRecords.map(ri => ({
+        sql: `INSERT INTO items_receta (id, productoFinalId, insumoId, cantidad, unidad, costoLineaUsd) VALUES (?, ?, ?, ?, ?, ?)`,
+        params: [ri.id, ri.productoFinalId, ri.insumoId, ri.cantidad, ri.unidad, ri.costoLineaUsd]
+      }))
+    ];
+
+    await this.sqlite.transaction(statements);
 
     const view = this.toView(record, recetaRecords);
     this._productos.update(list => [...list, view]);
     this.toast.success(`Producto "${data.nombre}" creado exitosamente`);
   }
 
-  /**
-   * Registra la producción de un producto y descuenta los insumos del inventario
-   */
   async registrarProduccion(id: string, cantidadAProducir: number): Promise<void> {
     const producto = this.getById(id);
     if (!producto) return;
 
     this._loading.set(true);
     try {
-      // 1. Verificar si hay stock suficiente de todos los insumos (Opcional, pero recomendado)
-      // Por ahora procederemos con el descuento directo.
+      const statements: { sql: string; params: any[] }[] = [];
 
       for (const item of producto.receta) {
         const cantidadTotalADescontar = item.cantidad.mul(cantidadAProducir).toNumber();
-        const insumo = await db.insumos.get(item.insumoId);
-        
-        if (insumo) {
-          const nuevoStock = (insumo.stockActual || 0) - cantidadTotalADescontar;
-          await this.insumoService.update(item.insumoId, { stockActual: nuevoStock });
-        }
+        statements.push({
+          sql: 'UPDATE insumos SET stockActual = stockActual - ? WHERE id = ?',
+          params: [cantidadTotalADescontar, item.insumoId]
+        });
       }
+
+      await this.sqlite.transaction(statements);
+      await this.insumoService.loadAll(); // Reload stocks
 
       this.toast.success(`Producción registrada: ${cantidadAProducir} unidades de "${producto.nombre}". Inventario actualizado.`);
     } catch (e) {
@@ -201,8 +216,11 @@ export class ProductoService {
 
   async delete(id: string): Promise<void> {
     const producto = this._productos().find(p => p.id === id);
-    await db.itemsReceta.where('productoFinalId').equals(id).delete();
-    await db.productos.delete(id);
+    const statements = [
+      { sql: 'DELETE FROM items_receta WHERE productoFinalId = ?', params: [id] },
+      { sql: 'DELETE FROM productos WHERE id = ?', params: [id] }
+    ];
+    await this.sqlite.transaction(statements);
     this._productos.update(list => list.filter(p => p.id !== id));
     this.toast.warning(`Producto "${producto?.nombre}" eliminado`);
   }
@@ -269,8 +287,8 @@ export class ProductoService {
 
   /** Seed demo data if DB is empty */
   async seedIfEmpty(): Promise<void> {
-    const count = await db.productos.count();
-    if (count > 0) return;
+    const res = await this.sqlite.get<{count: number}>('SELECT COUNT(*) as count FROM productos');
+    if (res?.count && res.count > 0) return;
 
     const insumos = this.insumoService.insumos();
     if (insumos.length < 5) return;

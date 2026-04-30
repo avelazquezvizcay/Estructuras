@@ -248,4 +248,41 @@ export class Dashboard {
     };
     return colors[color] || colors['primary'];
   }
+
+  protected exportarDashboard() {
+    this.notifService.add('Exportación', 'Generando archivo de reporte...', 'info');
+    
+    // 1. Recopilar datos de productos
+    const productos = this.productoService.productos();
+    let csvContent = "REPORTE GENERAL DE PRODUCTOS\n";
+    csvContent += "Nombre,Categoria,Costo_Total_USD,Precio_Venta_USD,Margen_%\n";
+    
+    productos.forEach(p => {
+      const precioUsd = p.precios[0]?.precioUsd || '0';
+      const margen = p.precios[0]?.margenPct || '0';
+      csvContent += `"${p.nombre}","${p.categoria}",${p.costoTotalUsd.toFixed(4)},${precioUsd},${margen}\n`;
+    });
+
+    // 2. Recopilar datos de Insumos
+    const insumos = this.insumoService.insumos();
+    csvContent += "\nREPORTE GENERAL DE INSUMOS\n";
+    csvContent += "Nombre,Categoria,Stock_Actual,Stock_Minimo,Costo_Base_USD,Unidad\n";
+    
+    insumos.forEach(i => {
+      csvContent += `"${i.nombre}","${i.categoria}",${i.stockActual},${i.stockMinimo},${i.costoUnidadBaseUsd},${i.unidadBase}\n`;
+    });
+
+    // 3. Crear y descargar el archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute("download", `sec_reporte_general_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    this.notifService.add('Éxito', 'El reporte ha sido descargado correctamente.', 'success');
+  }
 }

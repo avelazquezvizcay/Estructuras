@@ -196,4 +196,35 @@ export class GroqAiService {
       console.error('No se pudo cargar el historial del chat', e);
     }
   }
+
+  /**
+   * Método genérico para generar contenido con Groq
+   */
+  public async generateContent(prompt: string, systemPrompt?: string): Promise<string> {
+    if (!this.GROQ_API_KEY) return '';
+
+    try {
+      const response = await fetch(this.GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.GROQ_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt || 'Eres un asistente útil y preciso.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2,
+        })
+      });
+
+      if (!response.ok) return '';
+      const data = await response.json();
+      return data.choices[0]?.message?.content || '';
+    } catch {
+      return '';
+    }
+  }
 }

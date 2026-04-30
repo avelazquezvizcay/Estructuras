@@ -187,8 +187,14 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
-  padding-top: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  margin: 0 calc(var(--space-6) * -1) calc(var(--space-6) * -1);
+  background: var(--bg-card);
   border-top: 1px solid var(--border-primary);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 /* ── Delete Confirmation ─── */

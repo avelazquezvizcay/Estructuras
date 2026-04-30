@@ -1,16 +1,14 @@
-import Dexie, { type Table } from 'dexie';
-
 export interface InsumoRecord {
-  id?: string;
+  id: string;
   nombre: string;
   categoria: string;
   tipoMedida: 'peso' | 'volumen' | 'cantidad';
   unidadBase: string;
   presentacionCantidad: number;
   presentacionUnidad: string;
-  costoPresentacionUsd: string; // Decimal as string
+  costoPresentacionUsd: string;
   costoUnidadBaseUsd: string;
-  monedaRegistro: 'USD' | 'VES'; // En qué moneda se registró el costo
+  monedaRegistro: 'USD' | 'VES';
   proveedor: string;
   fechaActualizacionCosto: string;
   stockActual: number;
@@ -25,7 +23,7 @@ export interface HistoricoPrecioInsumoRecord {
 }
 
 export interface PresupuestoRecord {
-  id?: string;
+  id: string;
   clienteNombre: string;
   contacto: string;
   fecha: string;
@@ -35,10 +33,10 @@ export interface PresupuestoRecord {
 }
 
 export interface CompraRecord {
-  id?: string;
+  id: string;
   proveedor: string;
   fecha: string;
-  items: string; // JSON array [{insumoId, cantidad, costoUnitarioUsd, subtotalUsd}]
+  items: string; // JSON array
   tasaUsd: number;
   totalUsd: string;
   totalBes: string;
@@ -46,7 +44,7 @@ export interface CompraRecord {
 }
 
 export interface ProductoRecord {
-  id?: string;
+  id: string;
   nombre: string;
   descripcion: string;
   categoria: string;
@@ -59,7 +57,7 @@ export interface ProductoRecord {
 }
 
 export interface ItemRecetaRecord {
-  id?: string;
+  id: string;
   productoFinalId: string;
   insumoId: string;
   cantidad: string;
@@ -68,7 +66,7 @@ export interface ItemRecetaRecord {
 }
 
 export interface TasaCambioRecord {
-  id?: string;
+  id: string;
   tipo: 'BCV_USD' | 'BINANCE_USDT' | 'BCV_EUR';
   valor: string;
   fecha: string;
@@ -82,40 +80,5 @@ export interface TasaHistorialRecord {
   binance: number;
   euro: number;
   source: string;
-  manual: boolean;
+  manual: boolean | number; // SQLite returns 0/1
 }
-
-export class SecDatabase extends Dexie {
-  insumos!: Table<InsumoRecord, string>;
-  productos!: Table<ProductoRecord, string>;
-  itemsReceta!: Table<ItemRecetaRecord, string>;
-  tasasCambio!: Table<TasaCambioRecord, string>;
-  tasaHistorial!: Table<TasaHistorialRecord, number>;
-  historicoPrecios!: Table<HistoricoPrecioInsumoRecord, number>;
-  presupuestos!: Table<PresupuestoRecord, string>;
-  compras!: Table<CompraRecord, string>;
-
-  constructor() {
-    super('SecDatabase');
-
-    this.version(1).stores({
-      insumos: 'id, nombre, categoria, tipoMedida',
-      productos: 'id, nombre, categoria',
-      itemsReceta: 'id, productoFinalId, insumoId',
-      tasasCambio: 'id, tipo, esActiva, fecha'
-    });
-
-    this.version(5).stores({
-      insumos: '++id, nombre, categoria, proveedor',
-      productos: '++id, nombre, categoria',
-      itemsReceta: '++id, productoFinalId, insumoId',
-      historicoPrecios: '++id, insumoId, fecha',
-      presupuestos: '++id, clienteNombre, fecha',
-      tasasCambio: '++id, tipo, fecha',
-      tasaHistorial: '++id, fecha',
-      compras: '++id, proveedor, fecha, totalUsd'
-    });
-  }
-}
-
-export const db = new SecDatabase();

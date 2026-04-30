@@ -351,6 +351,8 @@ img { max-width: 100%; display: block; }
   &--icon { width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm); }
   &--sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
   &--lg { padding: var(--space-3) var(--space-6); font-size: var(--text-base); }
+  &--full { width: 100%; }
+  &--danger-text { color: var(--accent-danger); &:hover { background: var(--accent-danger-subtle); } }
 }
 
 /* ── Cards ─── */

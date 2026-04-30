@@ -1,8 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
+import { SqliteDatabaseService } from './sqlite-database.service';
 
-export type UserRole = 'master' | 'admin' | 'user';
+export type UserRole = 'master' | 'admin' | 'supervisor' | 'user';
 
 export interface AppUser {
   id: string;
@@ -11,6 +12,7 @@ export interface AppUser {
   role: UserRole;
   avatar?: string;
   createdAt: string;
+  passwordHash?: string; // Loaded only for auth
 }
 
 export interface ModuleConfig {
@@ -23,16 +25,16 @@ export interface ModuleConfig {
 }
 
 const DEFAULT_MODULES: ModuleConfig[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
-  { id: 'insumos', label: 'Insumos', icon: 'inventory_2', route: '/insumos', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
-  { id: 'productos', label: 'Productos', icon: 'bakery_dining', route: '/productos', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
-  { id: 'presupuestos', label: 'Presupuestos', icon: 'request_quote', route: '/presupuestos', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'compras', label: 'Compras / Facturas', icon: 'receipt_long', route: '/compras', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'inventario_masivo', label: 'Inventario Masivo', icon: 'inventory', route: '/inventario-masivo', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
-  { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master'] },
-  { id: 'asistente_ia', label: 'Asistente IA (Groq)', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'user'] },
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'insumos', label: 'Insumos', icon: 'inventory_2', route: '/insumos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'productos', label: 'Productos Elaborados', icon: 'bakery_dining', route: '/productos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'presupuestos', label: 'Presupuestos', icon: 'request_quote', route: '/presupuestos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'compras', label: 'Compras / Facturas', icon: 'receipt_long', route: '/compras', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'inventario_masivo', label: 'Inventario Masivo', icon: 'inventory', route: '/inventario-masivo', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master', 'admin'] },
+  { id: 'asistente_ia', label: 'Asistente IA (Groq)', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
 ];
 
 const DEFAULT_MASTER: AppUser = {
@@ -45,6 +47,10 @@ const DEFAULT_MASTER: AppUser = {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly sqlite = inject(SqliteDatabaseService);
+
   private readonly _currentUser = signal<AppUser | null>(null);
   private readonly _users = signal<AppUser[]>([]);
   private readonly _modules = signal<ModuleConfig[]>(DEFAULT_MODULES);
@@ -58,7 +64,7 @@ export class AuthService {
   readonly isMaster = computed(() => this._currentUser()?.role === 'master');
   readonly isAdmin = computed(() => {
     const role = this._currentUser()?.role;
-    return role === 'master' || role === 'admin';
+    return role === 'master' || role === 'admin' || role === 'supervisor';
   });
 
   readonly visibleModules = computed(() => {
@@ -76,35 +82,42 @@ export class AuthService {
     return mod ? (mod.enabled && mod.rolesAllowed.includes(user.role)) : false;
   }
 
-  constructor(
-    private toast: ToastService,
-    private router: Router
-  ) {
-    this.loadState();
+  constructor() {
+    this.init();
   }
 
-  // ─── Login ──────────────────────────────────────────────────
-  login(email: string, password: string): boolean {
-    const users = this._users();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  async init(): Promise<void> {
+    await this.loadState();
+  }
 
-    if (!user) {
-      this.toast.error('Usuario no encontrado');
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      const user = await this.sqlite.get<AppUser & { passwordHash: string }>(
+        'SELECT * FROM users WHERE email = ?', 
+        [email.toLowerCase()]
+      );
+
+      if (!user) {
+        this.toast.error('Usuario no encontrado');
+        return false;
+      }
+
+      if (user.passwordHash !== this.simpleHash(password)) {
+        this.toast.error('Contraseña incorrecta');
+        return false;
+      }
+
+      const { passwordHash, ...userView } = user;
+      this._currentUser.set(userView as AppUser);
+      this._isLoggedIn.set(true);
+      
+      localStorage.setItem('sec_session', JSON.stringify(userView));
+      this.toast.success(`Bienvenido, ${user.nombre}`);
+      return true;
+    } catch (e) {
+      console.error('Login error:', e);
       return false;
     }
-
-    // Simple password check (stored hashed in real app)
-    const storedPass = this.getStoredPassword(user.id);
-    if (storedPass && storedPass !== this.simpleHash(password)) {
-      this.toast.error('Contraseña incorrecta');
-      return false;
-    }
-
-    this._currentUser.set(user);
-    this._isLoggedIn.set(true);
-    this.saveState();
-    this.toast.success(`Bienvenido, ${user.nombre}`);
-    return true;
   }
 
   logout(): void {
@@ -115,96 +128,108 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  // ─── User Registration ──────────────────────────────────────
-  register(data: { email: string; nombre: string; password: string; role?: UserRole }): boolean {
-    const existing = this._users().find(u => u.email.toLowerCase() === data.email.toLowerCase());
-    if (existing) {
-      this.toast.error('El correo ya está registrado');
+  async register(data: { email: string; nombre: string; password: string; role?: UserRole }): Promise<boolean> {
+    try {
+      const existing = await this.sqlite.get('SELECT id FROM users WHERE email = ?', [data.email.toLowerCase()]);
+      if (existing) {
+        this.toast.error('El correo ya está registrado');
+        return false;
+      }
+
+      const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+      const passwordHash = this.simpleHash(data.password);
+      const createdAt = new Date().toISOString();
+      const role = data.role || 'user';
+
+      await this.sqlite.run(
+        'INSERT INTO users (id, email, nombre, role, passwordHash, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, data.email.toLowerCase(), data.nombre, role, passwordHash, createdAt]
+      );
+
+      await this.loadUsers();
+      this.toast.success(`Usuario "${data.nombre}" creado`);
+      return true;
+    } catch (e) {
+      console.error('Register error:', e);
       return false;
     }
-
-    const newUser: AppUser = {
-      id: crypto.randomUUID(),
-      email: data.email,
-      nombre: data.nombre,
-      role: data.role || 'user',
-      createdAt: new Date().toISOString()
-    };
-
-    this._users.update(list => [...list, newUser]);
-    this.setStoredPassword(newUser.id, this.simpleHash(data.password));
-    this.saveState();
-    this.toast.success(`Usuario "${data.nombre}" creado`);
-    return true;
   }
 
-  // ─── User Management (Master only) ──────────────────────────
-  updateUserRole(userId: string, newRole: UserRole): void {
-    this._users.update(list =>
-      list.map(u => u.id === userId ? { ...u, role: newRole } : u)
-    );
-    this.saveState();
+  async updateUser(id: string, data: Partial<AppUser>): Promise<void> {
+    const fields = Object.keys(data).filter(k => k !== 'id' && k !== 'passwordHash');
+    if (fields.length === 0) return;
+
+    const sql = `UPDATE users SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`;
+    const params = [...fields.map(f => (data as any)[f]), id];
+
+    await this.sqlite.run(sql, params);
+    await this.loadUsers();
+    this.toast.success('Información de usuario actualizada');
+  }
+
+  async updateUserRole(userId: string, newRole: UserRole): Promise<void> {
+    await this.sqlite.run('UPDATE users SET role = ? WHERE id = ?', [newRole, userId]);
+    await this.loadUsers();
     this.toast.success('Rol actualizado');
   }
 
-  deleteUser(userId: string): void {
+  async updateUserPassword(userId: string, newPassword: string): Promise<void> {
+    const hash = this.simpleHash(newPassword);
+    await this.sqlite.run('UPDATE users SET passwordHash = ? WHERE id = ?', [hash, userId]);
+    this.toast.success('Contraseña actualizada correctamente');
+  }
+
+  async deleteUser(userId: string): Promise<void> {
     const user = this._users().find(u => u.id === userId);
     if (user?.role === 'master') {
       this.toast.error('No puedes eliminar al usuario master');
       return;
     }
-    this._users.update(list => list.filter(u => u.id !== userId));
-    localStorage.removeItem(`sec_pass_${userId}`);
-    this.saveState();
+    await this.sqlite.run('DELETE FROM users WHERE id = ?', [userId]);
+    await this.loadUsers();
     this.toast.warning(`Usuario eliminado`);
   }
 
-  // ─── Module Management (Master only) ────────────────────────
+  // ─── Module Management ────────────────────────────────────
   toggleModule(moduleId: string, enabled: boolean): void {
     this._modules.update(list =>
       list.map(m => m.id === moduleId ? { ...m, enabled } : m)
     );
-    this.saveState();
+    this.saveModules();
   }
 
   updateModuleRoles(moduleId: string, roles: UserRole[]): void {
     this._modules.update(list =>
       list.map(m => m.id === moduleId ? { ...m, rolesAllowed: roles } : m)
     );
-    this.saveState();
+    this.saveModules();
   }
 
-  // ─── Persistence ────────────────────────────────────────────
-  private saveState(): void {
-    try {
-      localStorage.setItem('sec_users', JSON.stringify(this._users()));
-      localStorage.setItem('sec_modules', JSON.stringify(this._modules()));
-      if (this._currentUser()) {
-        localStorage.setItem('sec_session', JSON.stringify(this._currentUser()));
-      }
-    } catch {}
+  private saveModules(): void {
+    localStorage.setItem('sec_modules', JSON.stringify(this._modules()));
   }
 
-  private loadState(): void {
+  private async loadUsers(): Promise<void> {
+    const users = await this.sqlite.all<AppUser>('SELECT id, email, nombre, role, createdAt FROM users');
+    this._users.set(users);
+
+    if (!users.find(u => u.role === 'master')) {
+      await this.register({
+        email: DEFAULT_MASTER.email,
+        nombre: DEFAULT_MASTER.nombre,
+        password: 'admin123',
+        role: 'master'
+      });
+    }
+  }
+
+  private async loadState(): Promise<void> {
     try {
-      // Load users
-      const usersRaw = localStorage.getItem('sec_users');
-      if (usersRaw) {
-        this._users.set(JSON.parse(usersRaw));
-      }
+      await this.loadUsers();
 
-      // Ensure master user always exists
-      if (!this._users().find(u => u.role === 'master')) {
-        this._users.update(list => [DEFAULT_MASTER, ...list]);
-        this.setStoredPassword(DEFAULT_MASTER.id, this.simpleHash('admin123'));
-        this.saveState();
-      }
-
-      // Load modules
       const modulesRaw = localStorage.getItem('sec_modules');
       if (modulesRaw) {
         const stored = JSON.parse(modulesRaw) as ModuleConfig[];
-        // Merge: keep stored config but add any new modules from defaults
         const merged = DEFAULT_MODULES.map(def => {
           const saved = stored.find(s => s.id === def.id);
           return saved ? { ...def, enabled: saved.enabled, rolesAllowed: saved.rolesAllowed } : def;
@@ -212,20 +237,22 @@ export class AuthService {
         this._modules.set(merged);
       }
 
-      // Restore session
       const sessionRaw = localStorage.getItem('sec_session');
       if (sessionRaw) {
-        const user = JSON.parse(sessionRaw) as AppUser;
-        // Verify user still exists
-        if (this._users().find(u => u.id === user.id)) {
+        const userSession = JSON.parse(sessionRaw) as AppUser;
+        const user = await this.sqlite.get<AppUser>('SELECT * FROM users WHERE id = ?', [userSession.id]);
+        if (user) {
           this._currentUser.set(user);
           this._isLoggedIn.set(true);
+        } else {
+          localStorage.removeItem('sec_session');
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error loading state:', e);
+    }
   }
 
-  // ─── Password helpers (simple, not for production) ──────────
   private simpleHash(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -234,13 +261,5 @@ export class AuthService {
       hash = hash & hash;
     }
     return 'h_' + Math.abs(hash).toString(36);
-  }
-
-  private getStoredPassword(userId: string): string | null {
-    return localStorage.getItem(`sec_pass_${userId}`);
-  }
-
-  private setStoredPassword(userId: string, hash: string): void {
-    localStorage.setItem(`sec_pass_${userId}`, hash);
   }
 }

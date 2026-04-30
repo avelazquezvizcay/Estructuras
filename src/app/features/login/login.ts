@@ -27,7 +27,7 @@ export class Login {
     this.loading.set(true);
     // Small delay for UX
     await new Promise(r => setTimeout(r, 400));
-    const ok = this.auth.login(this.email(), this.password());
+    const ok = await this.auth.login(this.email(), this.password());
     this.loading.set(false);
     if (ok) {
       this.router.navigate(['/dashboard']);
@@ -41,7 +41,7 @@ export class Login {
     }
     this.loading.set(true);
     await new Promise(r => setTimeout(r, 400));
-    const ok = this.auth.register({
+    const ok = await this.auth.register({
       email: this.email(),
       nombre: this.nombre(),
       password: this.password()

@@ -10,6 +10,7 @@ import Decimal from 'decimal.js';
 import { createWorker } from 'tesseract.js';
 import { GroqAiService } from '../../core/services/groq-ai.service';
 import { GeminiAiService } from '../../core/services/gemini-ai.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -26,11 +27,16 @@ export class Compras implements OnInit {
   protected readonly tasaService = inject(TasaCambioService);
   private readonly groqAi = inject(GroqAiService);
   private readonly geminiAi = inject(GeminiAiService);
+  protected readonly settingsService = inject(SettingsService);
   private readonly toast = inject(ToastService);
 
   // UI State
   protected readonly showModal = signal(false);
+  protected readonly showDeleteModal = signal(false);
+  protected readonly selectedCompraId = signal<string | null>(null);
+  protected readonly deleteMotivo = signal('');
   protected readonly isScanning = signal(false);
+  protected readonly imagePreviewUrl = signal<string | null>(null);
 
   // Form State
   protected readonly formProveedor = signal('');
@@ -53,6 +59,8 @@ export class Compras implements OnInit {
     this.formFecha.set(new Date().toISOString().split('T')[0]);
     this.formItems.set([]);
     this.formTasa.set(this.tasaService.tasaActiva()?.valor.toNumber() || 1);
+    this.formMetodoPago.set(this.settingsService.metodosPago()[0] || 'Efectivo');
+    this.imagePreviewUrl.set(null);
     this.showModal.set(true);
   }
 
@@ -103,7 +111,14 @@ export class Compras implements OnInit {
 
   async onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      this.imagePreviewUrl.set(null);
+      return;
+    }
+
+    // Set preview URL
+    const previewUrl = URL.createObjectURL(file);
+    this.imagePreviewUrl.set(previewUrl);
 
     this.isScanning.set(true);
     this.toast.info('Analizando factura con IA...');
@@ -220,15 +235,35 @@ export class Compras implements OnInit {
 
     const tasa = this.formTasa();
 
-    await this.compraService.registrarCompra({
-      proveedor: this.formProveedor(),
-      fecha: this.formFecha(),
-      items: this.formItems(),
-      tasaUsd: tasa,
-      metodoPago: this.formMetodoPago()
-    });
+    try {
+      await this.compraService.registrarCompra({
+        proveedor: this.formProveedor(),
+        fecha: this.formFecha(),
+        items: this.formItems(),
+        tasaUsd: tasa,
+        metodoPago: this.formMetodoPago()
+      });
+      this.showModal.set(false);
+    } catch (error) {
+      // El error ya fue notificado por el servicio
+      console.error('Error en guardarCompra:', error);
+    }
+  }
 
-    this.showModal.set(false);
+  async executeDelete() {
+    const id = this.selectedCompraId();
+    if (!id) return;
+
+    await this.compraService.eliminarCompra(id);
+    this.showDeleteModal.set(false);
+    this.selectedCompraId.set(null);
+    this.deleteMotivo.set('');
+  }
+
+  confirmDelete(id: string) {
+    this.selectedCompraId.set(id);
+    this.deleteMotivo.set('');
+    this.showDeleteModal.set(true);
   }
 
   parseItems(json: string): ItemCompra[] {

@@ -1,9 +1,10 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import Decimal from 'decimal.js';
 import { TasaCambio, TipoTasa } from '../models/domain.models';
 import { ToastService } from './toast.service';
 import { NotificationService } from './notification.service';
-import { db, TasaHistorialRecord } from '../data/database';
+import { SqliteDatabaseService } from './sqlite-database.service';
+import { type TasaHistorialRecord, type InsumoRecord, type ProductoRecord, type ItemRecetaRecord, type TasaCambioRecord } from '../data/database';
 
 export interface TasaHistorialView {
   id: number;
@@ -17,6 +18,10 @@ export interface TasaHistorialView {
 
 @Injectable({ providedIn: 'root' })
 export class TasaCambioService {
+  private readonly toast = inject(ToastService);
+  private readonly notifService = inject(NotificationService);
+  private readonly sqlite = inject(SqliteDatabaseService);
+
   private readonly _tasas = signal<TasaCambio[]>([]);
   private readonly _tasaPreferida = signal<TipoTasa>('BCV_USD');
   private readonly _loading = signal(false);
@@ -53,10 +58,7 @@ export class TasaCambioService {
     this._tasas().find(t => t.tipo === 'BCV_EUR' && t.esActiva) ?? null
   );
 
-  constructor(
-    private toast: ToastService,
-    private notifService: NotificationService
-  ) {
+  constructor() {
     this.loadFromCache();
     this.loadHistorial();
     this.fetchRates();
@@ -206,20 +208,20 @@ export class TasaCambioService {
     this.appendHistorial(bcv, binance, euro, source, manual);
   }
 
-  // ─── Historial persistence (Dexie) ──────────────────────────
+  // ─── Historial persistence (SQLite) ──────────────────────────
   private async appendHistorial(bcv: number, binance: number, euro: number, source: string, manual: boolean): Promise<void> {
     try {
-      const record: TasaHistorialRecord = {
-        fecha: new Date().toISOString(),
-        bcv, binance, euro, source, manual
-      };
-      await db.tasaHistorial.add(record);
+      const fecha = new Date().toISOString();
+      await this.sqlite.run(
+        'INSERT INTO tasa_historial (fecha, bcv, binance, euro, source, manual) VALUES (?, ?, ?, ?, ?, ?)',
+        [fecha, bcv, binance, euro, source, manual ? 1 : 0]
+      );
 
       // Keep max 200 records
-      const count = await db.tasaHistorial.count();
-      if (count > 200) {
-        const oldest = await db.tasaHistorial.orderBy('id').limit(count - 200).toArray();
-        await db.tasaHistorial.bulkDelete(oldest.map(r => r.id!));
+      const res = await this.sqlite.get<{count: number}>('SELECT COUNT(*) as count FROM tasa_historial');
+      if (res && res.count > 200) {
+        const diff = res.count - 200;
+        await this.sqlite.run(`DELETE FROM tasa_historial WHERE id IN (SELECT id FROM tasa_historial ORDER BY id ASC LIMIT ?)`, [diff]);
       }
 
       await this.loadHistorial();
@@ -230,7 +232,9 @@ export class TasaCambioService {
 
   async loadHistorial(): Promise<void> {
     try {
-      const records = await db.tasaHistorial.orderBy('id').reverse().limit(100).toArray();
+      const records = await this.sqlite.all<TasaHistorialRecord>(
+        'SELECT * FROM tasa_historial ORDER BY id DESC LIMIT 100'
+      );
       this._historial.set(records.map(r => ({
         id: r.id!,
         fecha: new Date(r.fecha),
@@ -238,18 +242,18 @@ export class TasaCambioService {
         binance: r.binance,
         euro: r.euro,
         source: r.source,
-        manual: r.manual
+        manual: !!r.manual
       })));
     } catch {}
   }
 
   async deleteHistorialEntry(id: number): Promise<void> {
-    await db.tasaHistorial.delete(id);
+    await this.sqlite.run('DELETE FROM tasa_historial WHERE id = ?', [id]);
     await this.loadHistorial();
   }
 
   async clearHistorial(): Promise<void> {
-    await db.tasaHistorial.clear();
+    await this.sqlite.run('DELETE FROM tasa_historial');
     this._historial.set([]);
   }
 
@@ -316,11 +320,11 @@ export class TasaCambioService {
   // ─── Export all data for cloud backup ───────────────────────
   async exportAllData(): Promise<object> {
     const [insumos, productos, recetas, tasas, historial] = await Promise.all([
-      db.insumos.toArray(),
-      db.productos.toArray(),
-      db.itemsReceta.toArray(),
-      db.tasasCambio.toArray(),
-      db.tasaHistorial.toArray()
+      this.sqlite.all('SELECT * FROM insumos'),
+      this.sqlite.all('SELECT * FROM productos'),
+      this.sqlite.all('SELECT * FROM items_receta'),
+      this.sqlite.all('SELECT * FROM tasas_cambio'),
+      this.sqlite.all('SELECT * FROM tasa_historial')
     ]);
     return {
       version: 2,
@@ -333,13 +337,42 @@ export class TasaCambioService {
     if (!backup?.data) throw new Error('Formato de backup inválido');
     const { insumos, productos, recetas, tasas, historial } = backup.data;
 
-    await db.transaction('rw', [db.insumos, db.productos, db.itemsReceta, db.tasasCambio, db.tasaHistorial], async () => {
-      if (insumos?.length) { await db.insumos.clear(); await db.insumos.bulkAdd(insumos); }
-      if (productos?.length) { await db.productos.clear(); await db.productos.bulkAdd(productos); }
-      if (recetas?.length) { await db.itemsReceta.clear(); await db.itemsReceta.bulkAdd(recetas); }
-      if (tasas?.length) { await db.tasasCambio.clear(); await db.tasasCambio.bulkAdd(tasas); }
-      if (historial?.length) { await db.tasaHistorial.clear(); await db.tasaHistorial.bulkAdd(historial); }
-    });
+    const statements: { sql: string; params: any[] }[] = [
+      { sql: 'DELETE FROM items_receta', params: [] },
+      { sql: 'DELETE FROM productos', params: [] },
+      { sql: 'DELETE FROM insumos', params: [] },
+      { sql: 'DELETE FROM tasas_cambio', params: [] },
+      { sql: 'DELETE FROM tasa_historial', params: [] }
+    ];
+
+    if (insumos?.length) {
+      for (const i of insumos) {
+        statements.push({
+          sql: 'INSERT INTO insumos (id, nombre, categoria, tipoMedida, unidadBase, presentacionCantidad, presentacionUnidad, costoPresentacionUsd, costoUnidadBaseUsd, monedaRegistro, proveedor, fechaActualizacionCosto, stockActual, stockMinimo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          params: [i.id, i.nombre, i.categoria, i.tipoMedida, i.unidadBase, i.presentacionCantidad, i.presentacionUnidad, i.costoPresentacionUsd, i.costoUnidadBaseUsd, i.monedaRegistro, i.proveedor, i.fechaActualizacionCosto, i.stockActual, i.stockMinimo]
+        });
+      }
+    }
+
+    if (productos?.length) {
+      for (const p of productos) {
+        statements.push({
+          sql: 'INSERT INTO productos (id, nombre, descripcion, categoria, rendimientoCantidad, rendimientoUnidad, margenUtilidadPct, costoTotalUsd, precioVentaUsd, notas) VALUES (?,?,?,?,?,?,?,?,?,?)',
+          params: [p.id, p.nombre, p.descripcion, p.categoria, p.rendimientoCantidad, p.rendimientoUnidad, p.margenUtilidadPct, p.costoTotalUsd, p.precioVentaUsd, p.notas]
+        });
+      }
+    }
+
+    if (recetas?.length) {
+      for (const r of recetas) {
+        statements.push({
+          sql: 'INSERT INTO items_receta (id, productoFinalId, insumoId, cantidad, unidad, costoLineaUsd) VALUES (?,?,?,?,?,?)',
+          params: [r.id, r.productoFinalId, r.insumoId, r.cantidad, r.unidad, r.costoLineaUsd]
+        });
+      }
+    }
+
+    await this.sqlite.transaction(statements);
 
     this.loadFromCache();
     await this.loadHistorial();

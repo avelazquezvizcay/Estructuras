@@ -25,6 +25,9 @@
               <button class="btn btn--ghost btn--sm" (click)="$event.stopPropagation(); exportar('Excel', rep.id)">
                 <span class="material-symbols-rounded">table_view</span> Excel
               </button>
+              <button class="btn btn--ghost btn--sm" (click)="$event.stopPropagation(); exportar('PDF', rep.id)">
+                <span class="material-symbols-rounded">picture_as_pdf</span> PDF
+              </button>
           </div>
         </div>
       }

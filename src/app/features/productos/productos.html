@@ -80,8 +80,8 @@
     } @else {
       <div class="empty-state card">
         <span class="material-symbols-rounded">bakery_dining</span>
-        <div class="empty-state__title">No hay productos</div>
-        <div class="empty-state__description">Crea tu primer producto y arma su receta de costos.</div>
+        <div class="empty-state__title">No hay productos elaborados</div>
+        <div class="empty-state__description">Crea tu primer producto elaborado y arma su receta de costos.</div>
         <button class="btn btn--primary" (click)="openCreateModal()">
           <span class="material-symbols-rounded">add</span>
           {{ i18n.t('productos.newProduct') }}
@@ -220,7 +220,7 @@
 
 <!-- ═══ Create Product Modal ═══ -->
 @if (showModal()) {
-  <sec-modal title="Nuevo Producto" maxWidth="720px" (closed)="closeModal()">
+  <sec-modal title="Nuevo Producto Elaborado" maxWidth="720px" (closed)="closeModal()">
     <form class="producto-form" (ngSubmit)="saveProducto()">
 
       <div class="form-row form-row--2col">

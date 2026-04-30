@@ -7,7 +7,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // ── Navigation ───
     'nav.dashboard': 'Dashboard',
     'nav.insumos': 'Insumos',
-    'nav.productos': 'Productos',
+    'nav.productos': 'Productos Elaborados',
     'nav.tasas': 'Tasas de Cambio',
     'nav.reportes': 'Reportes',
     'nav.configuracion': 'Configuración',
@@ -18,7 +18,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dashboard.subtitle': 'Resumen general del sistema de costos',
     'dashboard.export': 'Exportar',
     'dashboard.newProduct': 'Nuevo Producto',
-    'dashboard.registeredProducts': 'Productos Registrados',
+    'dashboard.registeredProducts': 'Prods. Elaborados',
     'dashboard.newThisMonth': 'nuevos este mes',
     'dashboard.activeInputs': 'Insumos Activos',
     'dashboard.categories': 'categorías',
@@ -28,7 +28,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dashboard.ofProfit': 'de utilidad',
     'dashboard.activeRates': 'Tasas Activas',
     'dashboard.updatedAgo': 'Actualizado hace 2 horas',
-    'dashboard.top5Products': 'Top 5 Productos',
+    'dashboard.top5Products': 'Top 5 Elaborados',
     'dashboard.top5ProductsDesc': 'Productos con mayor costo de producción',
     'dashboard.top5Inputs': 'Top 5 Insumos',
     'dashboard.top5InputsDesc': 'Insumos más utilizados en recetas',
@@ -56,7 +56,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'insumos.col.actions': 'Acciones',
 
     // ── Productos ───
-    'productos.title': 'Productos Finales',
+    'productos.title': 'Productos Elaborados',
     'productos.subtitle': 'Gestiona tus productos y sus recetas de costos',
     'productos.newProduct': 'Nuevo Producto',
     'productos.cost': 'Costo',

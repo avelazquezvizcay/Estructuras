@@ -1,0 +1,61 @@
+<div class="activation-page">
+  <div class="activation-card card stagger-children">
+    
+    <div class="activation-card__header">
+      <div class="activation-card__logo">
+        <img src="logo.png" alt="SEC Logo">
+      </div>
+      <h1 class="activation-card__title">Activación de Software</h1>
+      <p class="activation-card__subtitle">Se requiere una licencia válida para acceder al sistema SEC.</p>
+    </div>
+
+    <form class="activation-form" (ngSubmit)="activate()">
+      <div class="form-group">
+        <label for="empresa">Nombre de la Empresa / Cliente</label>
+        <div class="input-wrapper">
+          <span class="material-symbols-rounded">business</span>
+          <input type="text" id="empresa" [(ngModel)]="empresa" name="empresa" placeholder="Nombre de tu Empresa" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="key">Código de Licencia</label>
+        <div class="input-wrapper">
+          <span class="material-symbols-rounded">key</span>
+          <textarea id="key" [(ngModel)]="key" name="key" placeholder="Pega aquí tu código de activación..." required rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="activation-info">
+        <div class="info-item">
+          <span class="material-symbols-rounded">devices</span>
+          <div>
+            <p><strong>Código de este Equipo:</strong></p>
+            <p class="hardware-id">{{ licenseService.deviceId() }}</p>
+          </div>
+        </div>
+        <div class="info-item" style="margin-top: 10px;">
+          <span class="material-symbols-rounded">verified</span>
+          <p>Esta licencia quedará vinculada permanentemente a este equipo específico para evitar copias no autorizadas.</p>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--full" [disabled]="loading()">
+        @if (loading()) {
+          <span class="loader-spinner"></span> Validando...
+        } @else {
+          <span class="material-symbols-rounded">check_circle</span> Activar Ahora
+        }
+      </button>
+    </form>
+
+    <div class="activation-card__footer">
+      <p>¿No tienes una licencia? <a href="mailto:soporte@sec.com">Contactar a soporte</a></p>
+    </div>
+  </div>
+
+  <div class="activation-bg">
+    <div class="blob blob--1"></div>
+    <div class="blob blob--2"></div>
+  </div>
+</div>

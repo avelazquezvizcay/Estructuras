@@ -1,8 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import Decimal from 'decimal.js';
-import { db, type InsumoRecord, type HistoricoPrecioInsumoRecord } from '../data/database';
+import { type InsumoRecord, type HistoricoPrecioInsumoRecord } from '../data/database';
 import { ToastService } from './toast.service';
 import { I18nService } from './i18n.service';
+import { SqliteDatabaseService } from './sqlite-database.service';
 
 export interface InsumoView {
   id: string;
@@ -39,7 +40,8 @@ export class InsumoService {
 
   constructor(
     private toast: ToastService,
-    private i18n: I18nService
+    private i18n: I18nService,
+    private sqlite: SqliteDatabaseService
   ) {
     this.loadAll();
   }
@@ -47,7 +49,7 @@ export class InsumoService {
   async loadAll(): Promise<void> {
     this._loading.set(true);
     try {
-      const records = await db.insumos.toArray();
+      const records = await this.sqlite.all<InsumoRecord>('SELECT * FROM insumos ORDER BY nombre ASC');
       this._insumos.set(records.map(r => this.toView(r)));
     } catch (e) {
       console.error('Error loading insumos:', e);
@@ -57,7 +59,7 @@ export class InsumoService {
   }
 
   async create(data: Omit<InsumoRecord, 'id' | 'costoUnidadBaseUsd'>): Promise<InsumoRecord> {
-    const id = crypto.randomUUID();
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const costoUnidadBaseUsd = new Decimal(data.costoPresentacionUsd)
       .div(data.presentacionCantidad)
       .toString();
@@ -69,14 +71,29 @@ export class InsumoService {
       fechaActualizacionCosto: new Date().toISOString()
     };
 
-    await db.insumos.put(record);
+    const sql = `
+      INSERT INTO insumos (
+        id, nombre, categoria, tipoMedida, unidadBase, 
+        presentacionCantidad, presentacionUnidad, costoPresentacionUsd, 
+        costoUnidadBaseUsd, monedaRegistro, proveedor, 
+        fechaActualizacionCosto, stockActual, stockMinimo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      record.id, record.nombre, record.categoria, record.tipoMedida, record.unidadBase,
+      record.presentacionCantidad, record.presentacionUnidad, record.costoPresentacionUsd,
+      record.costoUnidadBaseUsd, record.monedaRegistro, record.proveedor,
+      record.fechaActualizacionCosto, record.stockActual, record.stockMinimo
+    ];
+
+    await this.sqlite.run(sql, params);
     this._insumos.update(list => [...list, this.toView(record)]);
     this.toast.success(`Insumo "${data.nombre}" creado exitosamente`);
     return record;
   }
 
   async update(id: string, data: Partial<InsumoRecord>): Promise<void> {
-    const existing = await db.insumos.get(id);
+    const existing = await this.sqlite.get<InsumoRecord>('SELECT * FROM insumos WHERE id = ?', [id]);
     if (!existing) return;
 
     const updated = { ...existing, ...data };
@@ -89,14 +106,29 @@ export class InsumoService {
     }
     updated.fechaActualizacionCosto = new Date().toISOString();
 
-    await db.insumos.put(updated);
+    const sql = `
+      UPDATE insumos SET 
+        nombre = ?, categoria = ?, tipoMedida = ?, unidadBase = ?, 
+        presentacionCantidad = ?, presentacionUnidad = ?, costoPresentacionUsd = ?, 
+        costoUnidadBaseUsd = ?, monedaRegistro = ?, proveedor = ?, 
+        fechaActualizacionCosto = ?, stockActual = ?, stockMinimo = ?
+      WHERE id = ?
+    `;
+    const params = [
+      updated.nombre, updated.categoria, updated.tipoMedida, updated.unidadBase,
+      updated.presentacionCantidad, updated.presentacionUnidad, updated.costoPresentacionUsd,
+      updated.costoUnidadBaseUsd, updated.monedaRegistro, updated.proveedor,
+      updated.fechaActualizacionCosto, updated.stockActual, updated.stockMinimo,
+      id
+    ];
+
+    await this.sqlite.run(sql, params);
 
     if (priceChanged) {
-      await db.historicoPrecios.add({
-        insumoId: id,
-        costoUnidadBaseUsd: updated.costoUnidadBaseUsd,
-        fecha: updated.fechaActualizacionCosto
-      });
+      await this.sqlite.run(
+        'INSERT INTO historico_precios (insumoId, costoUnidadBaseUsd, fecha) VALUES (?, ?, ?)',
+        [id, updated.costoUnidadBaseUsd, updated.fechaActualizacionCosto]
+      );
     }
 
     this._insumos.update(list =>
@@ -106,50 +138,57 @@ export class InsumoService {
   }
 
   async getPriceHistory(insumoId: string): Promise<HistoricoPrecioInsumoRecord[]> {
-    return await db.historicoPrecios.where('insumoId').equals(insumoId).sortBy('fecha');
+    return await this.sqlite.all<HistoricoPrecioInsumoRecord>(
+      'SELECT * FROM historico_precios WHERE insumoId = ? ORDER BY fecha ASC', 
+      [insumoId]
+    );
   }
 
   async delete(id: string): Promise<void> {
     // Check referential integrity
-    const usedIn = await db.itemsReceta.where('insumoId').equals(id).count();
+    const res = await this.sqlite.get('SELECT COUNT(*) as count FROM items_receta WHERE insumoId = ?', [id]);
+    const usedIn = res.count;
     if (usedIn > 0) {
       this.toast.error(`No se puede eliminar: el insumo está usado en ${usedIn} receta(s)`);
       return;
     }
 
     const insumo = this._insumos().find(i => i.id === id);
-    await db.insumos.delete(id);
+    await this.sqlite.run('DELETE FROM insumos WHERE id = ?', [id]);
     this._insumos.update(list => list.filter(i => i.id !== id));
     this.toast.warning(`Insumo "${insumo?.nombre}" eliminado`);
   }
 
-  /**
-   * Actualiza el stock y el costo de un insumo basándose en una compra.
-   * También registra el movimiento en el historial de precios.
-   */
   async updateStockAndPrice(id: string, cantidadEntrada: number, nuevoCostoUsd: Decimal): Promise<void> {
-    const insumo = await db.insumos.get(id);
+    const insumo = await this.sqlite.get<InsumoRecord>('SELECT * FROM insumos WHERE id = ?', [id]);
     if (!insumo) return;
 
     const nuevoStock = new Decimal(insumo.stockActual || 0).plus(cantidadEntrada).toNumber();
-    
-    // Si el costo cambió, se registra en el historial
     const costoAnterior = new Decimal(insumo.costoUnidadBaseUsd);
-    
-    await db.insumos.update(id, {
-      stockActual: nuevoStock,
-      costoUnidadBaseUsd: nuevoCostoUsd.toString(),
-      fechaActualizacionCosto: new Date().toISOString()
-    });
+    const fecha = new Date().toISOString();
+
+    await this.sqlite.run(
+      'UPDATE insumos SET stockActual = ?, costoUnidadBaseUsd = ?, fechaActualizacionCosto = ? WHERE id = ?',
+      [nuevoStock, nuevoCostoUsd.toString(), fecha, id]
+    );
 
     if (!costoAnterior.equals(nuevoCostoUsd)) {
-      await db.historicoPrecios.add({
-        insumoId: id,
-        costoUnidadBaseUsd: nuevoCostoUsd.toString(),
-        fecha: new Date().toISOString()
-      });
+      await this.sqlite.run(
+        'INSERT INTO historico_precios (insumoId, costoUnidadBaseUsd, fecha) VALUES (?, ?, ?)',
+        [id, nuevoCostoUsd.toString(), fecha]
+      );
     }
 
+    await this.loadAll();
+  }
+
+  async revertirStock(id: string, cantidadSalida: number): Promise<void> {
+    const insumo = await this.sqlite.get<InsumoRecord>('SELECT * FROM insumos WHERE id = ?', [id]);
+    if (!insumo) return;
+
+    const nuevoStock = new Decimal(insumo.stockActual || 0).minus(cantidadSalida).toNumber();
+    
+    await this.sqlite.run('UPDATE insumos SET stockActual = ? WHERE id = ?', [nuevoStock, id]);
     await this.loadAll();
   }
 
@@ -178,46 +217,25 @@ export class InsumoService {
 
   /** Seed demo data if DB is empty */
   async seedIfEmpty(): Promise<void> {
-    const count = await db.insumos.count();
-    if (count > 0) return;
+    const res = await this.sqlite.get('SELECT COUNT(*) as count FROM insumos');
+    if (res.count > 0) return;
 
     const demoData: Omit<InsumoRecord, 'id' | 'costoUnidadBaseUsd'>[] = [
       { nombre: 'Harina de Trigo Robin Hood', categoria: 'Harinas', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 1000, presentacionUnidad: 'g', costoPresentacionUsd: '1.20', monedaRegistro: 'USD', proveedor: 'Distribuidora ABC', fechaActualizacionCosto: new Date().toISOString(), stockActual: 5000, stockMinimo: 2000 },
       { nombre: 'Azúcar Refinada', categoria: 'Endulzantes', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 1000, presentacionUnidad: 'g', costoPresentacionUsd: '0.80', monedaRegistro: 'USD', proveedor: 'Central Azucarera', fechaActualizacionCosto: new Date().toISOString(), stockActual: 3000, stockMinimo: 1000 },
       { nombre: 'Huevos de Gallina', categoria: 'Proteínas', tipoMedida: 'cantidad', unidadBase: 'unidad', presentacionCantidad: 30, presentacionUnidad: 'unid', costoPresentacionUsd: '7.50', monedaRegistro: 'USD', proveedor: 'Granja El Sol', fechaActualizacionCosto: new Date().toISOString(), stockActual: 60, stockMinimo: 30 },
-      { nombre: 'Mantequilla Sin Sal', categoria: 'Grasas', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 500, presentacionUnidad: 'g', costoPresentacionUsd: '4.75', monedaRegistro: 'USD', proveedor: 'Lácteos Premium', fechaActualizacionCosto: new Date().toISOString(), stockActual: 200, stockMinimo: 500 }, // Low stock
+      { nombre: 'Mantequilla Sin Sal', categoria: 'Grasas', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 500, presentacionUnidad: 'g', costoPresentacionUsd: '4.75', monedaRegistro: 'USD', proveedor: 'Lácteos Premium', fechaActualizacionCosto: new Date().toISOString(), stockActual: 200, stockMinimo: 500 },
       { nombre: 'Leche Entera', categoria: 'Lácteos', tipoMedida: 'volumen', unidadBase: 'ml', presentacionCantidad: 1000, presentacionUnidad: 'ml', costoPresentacionUsd: '1.80', monedaRegistro: 'USD', proveedor: 'Lácteos Premium', fechaActualizacionCosto: new Date().toISOString(), stockActual: 5000, stockMinimo: 2000 },
       { nombre: 'Cacao en Polvo', categoria: 'Saborizantes', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 250, presentacionUnidad: 'g', costoPresentacionUsd: '3.50', monedaRegistro: 'USD', proveedor: 'Importadora Gourmet', fechaActualizacionCosto: new Date().toISOString(), stockActual: 1000, stockMinimo: 500 },
-      { nombre: 'Polvo para Hornear', categoria: 'Otros', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 200, presentacionUnidad: 'g', costoPresentacionUsd: '1.10', monedaRegistro: 'USD', proveedor: 'Distribuidora ABC', fechaActualizacionCosto: new Date().toISOString(), stockActual: 100, stockMinimo: 200 }, // Low stock
+      { nombre: 'Polvo para Hornear', categoria: 'Otros', tipoMedida: 'peso', unidadBase: 'g', presentacionCantidad: 200, presentacionUnidad: 'g', costoPresentacionUsd: '1.10', monedaRegistro: 'USD', proveedor: 'Distribuidora ABC', fechaActualizacionCosto: new Date().toISOString(), stockActual: 100, stockMinimo: 200 },
       { nombre: 'Vainilla Extracto', categoria: 'Saborizantes', tipoMedida: 'volumen', unidadBase: 'ml', presentacionCantidad: 120, presentacionUnidad: 'ml', costoPresentacionUsd: '2.90', monedaRegistro: 'USD', proveedor: 'Importadora Gourmet', fechaActualizacionCosto: new Date().toISOString(), stockActual: 500, stockMinimo: 100 },
-
+      { nombre: 'Caja para Torta 24cm', categoria: 'Empaques', tipoMedida: 'cantidad', unidadBase: 'unidad', presentacionCantidad: 50, presentacionUnidad: 'unid', costoPresentacionUsd: '25.00', monedaRegistro: 'USD', proveedor: 'Cajas Express', fechaActualizacionCosto: new Date().toISOString(), stockActual: 100, stockMinimo: 20 },
+      { nombre: 'Base de Cartón Oro', categoria: 'Empaques', tipoMedida: 'cantidad', unidadBase: 'unidad', presentacionCantidad: 100, presentacionUnidad: 'unid', costoPresentacionUsd: '15.00', monedaRegistro: 'USD', proveedor: 'Cajas Express', fechaActualizacionCosto: new Date().toISOString(), stockActual: 200, stockMinimo: 50 },
+      { nombre: 'Velas Cumpleaños (Paquete)', categoria: 'Decoración', tipoMedida: 'cantidad', unidadBase: 'unidad', presentacionCantidad: 24, presentacionUnidad: 'unid', costoPresentacionUsd: '2.40', monedaRegistro: 'USD', proveedor: 'Party City', fechaActualizacionCosto: new Date().toISOString(), stockActual: 48, stockMinimo: 12 },
     ];
 
     for (const item of demoData) {
       await this.create(item);
-    }
-
-    // Seed some history for demo
-    const allInsumos = await db.insumos.toArray();
-    for (const ins of allInsumos.slice(0, 3)) {
-      const baseCost = new Decimal(ins.costoUnidadBaseUsd);
-      // Simular variaciones de los últimos 3 meses
-      for (let i = 3; i >= 1; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        const variation = 1 + (Math.random() * 0.2 - 0.1); // +/- 10%
-        await db.historicoPrecios.add({
-          insumoId: ins.id!,
-          costoUnidadBaseUsd: baseCost.mul(variation).toString(),
-          fecha: date.toISOString()
-        });
-      }
-      // Add current cost to history too
-      await db.historicoPrecios.add({
-        insumoId: ins.id!,
-        costoUnidadBaseUsd: ins.costoUnidadBaseUsd,
-        fecha: ins.fechaActualizacionCosto
-      });
     }
   }
 }

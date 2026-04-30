@@ -19,19 +19,47 @@
           <div class="compra-info">
             <span class="compra-date">{{ compra.fecha }}</span>
             <h3 class="compra-vendor">{{ compra.proveedor }}</h3>
+            <span class="compra-metodo">{{ compra.metodoPago || 'Efectivo' }}</span>
           </div>
-          <div class="compra-total">
-            <span class="total-usd">${{ compra.totalUsd }}</span>
-            <span class="total-bs">{{ compra.totalBes }} Bs</span>
+          <div class="compra-right">
+            <div class="compra-total">
+              <span class="total-usd">${{ +compra.totalUsd | number:'1.2-2' }}</span>
+              <span class="total-bs">{{ +compra.totalBes | number:'1.2-2' }} Bs</span>
+            </div>
           </div>
         </div>
-        <div class="compra-items-preview">
-          @for (item of parseItems(compra.items).slice(0, 3); track item.insumoId) {
-            <span class="item-tag">{{ item.cantidad }}x {{ item.nombre }}</span>
-          }
-          @if (parseItems(compra.items).length > 3) {
-            <span class="item-tag">... y {{ parseItems(compra.items).length - 3 }} más</span>
-          }
+
+        <!-- Items detail -->
+        <div class="compra-items-detail">
+          <table class="items-mini-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-right">C/U (USD)</th>
+                <th class="text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of parseItems(compra.items); track $index) {
+                <tr>
+                  <td>{{ item.nombre }}</td>
+                  <td class="text-center">{{ item.cantidad }}x</td>
+                  <td class="text-right">${{ +item.costoUnitarioUsd | number:'1.2-2' }}</td>
+                  <td class="text-right">${{ +item.subtotalUsd | number:'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Card footer with actions -->
+        <div class="compra-card__footer">
+          <span class="compra-items-count">{{ parseItems(compra.items).length }} artículo(s)</span>
+          <button class="btn btn--danger btn--sm" (click)="confirmDelete(compra.id)" title="Eliminar factura y revertir inventario">
+            <span class="material-symbols-rounded">delete</span>
+            Eliminar
+          </button>
         </div>
       </div>
     }
@@ -44,6 +72,38 @@
     }
   </div>
 </div>
+
+<!-- Modal de Confirmación de Eliminación -->
+@if (showDeleteModal()) {
+  <sec-modal title="Confirmar Eliminación" maxWidth="480px" (closed)="showDeleteModal.set(false)">
+    <div class="delete-confirm">
+      <div class="delete-confirm__icon">
+        <span class="material-symbols-rounded">warning</span>
+      </div>
+      <h3 class="delete-confirm__title">¿Eliminar esta factura?</h3>
+      <p class="delete-confirm__desc">
+        Esta acción <strong>revertirá el stock</strong> de todos los insumos incluidos en esta factura, 
+        devolviendo las cantidades al estado previo a la compra.
+      </p>
+
+      <div class="form-group">
+        <label>Motivo de la eliminación (Opcional)</label>
+        <textarea [ngModel]="deleteMotivo()" (ngModelChange)="deleteMotivo.set($event)" 
+                  placeholder="Ej. Factura cargada por error, devolución parcial..." 
+                  class="delete-textarea">
+        </textarea>
+      </div>
+
+      <div class="delete-confirm__actions">
+        <button class="btn btn--secondary" (click)="showDeleteModal.set(false)">Cancelar</button>
+        <button class="btn btn--danger" (click)="executeDelete()">
+          <span class="material-symbols-rounded">delete</span>
+          Eliminar y Revertir Stock
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}
 
 <!-- Modal de Carga de Factura -->
 @if (showModal()) {
@@ -59,14 +119,22 @@
             <p>Sube una foto de tu factura y yo leeré los datos por ti (OCR Local).</p>
           </div>
         </div>
-        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
-        <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
-          @if (isScanning()) {
-            <span class="loader-spinner"></span> Procesando...
-          } @else {
-            <span class="material-symbols-rounded">photo_camera</span> Seleccionar Foto
+        <div class="ia-actions" style="display: flex; gap: 1rem; align-items: center;">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+          <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
+            @if (isScanning()) {
+              <span class="loader-spinner"></span> Procesando...
+            } @else {
+              <span class="material-symbols-rounded">photo_camera</span> Seleccionar Foto
+            }
+          </button>
+          
+          @if (imagePreviewUrl()) {
+            <div class="image-preview" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+              <img [src]="imagePreviewUrl()" alt="Preview de factura" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
           }
-        </button>
+        </div>
       </div>
 
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
@@ -85,9 +153,9 @@
         <div class="form-group">
           <label>Método de Pago</label>
           <select [ngModel]="formMetodoPago()" (ngModelChange)="formMetodoPago.set($event)">
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencia">Transferencia</option>
-            <option value="Zelle">Zelle / Pago Móvil</option>
+            @for (metodo of settingsService.metodosPago(); track metodo) {
+              <option [value]="metodo">{{ metodo }}</option>
+            }
           </select>
         </div>
       </div>
@@ -141,7 +209,7 @@
                 </td>
                 <td><input type="number" min="0.01" [ngModel]="item.cantidad" (ngModelChange)="updateItem(i, 'cantidad', $event)"></td>
                 <td><input type="number" min="0" [ngModel]="item.costoUnitarioUsd" (ngModelChange)="updateItem(i, 'costoUnitarioUsd', $event)"></td>
-                <td class="subtotal-cell">${{ item.subtotalUsd }}</td>
+                <td class="subtotal-cell">${{ +item.subtotalUsd | number:'1.2-2' }}</td>
                 <td>
                   <button class="btn btn--ghost btn--icon" (click)="removeItem(i)">
                     <span class="material-symbols-rounded">close</span>

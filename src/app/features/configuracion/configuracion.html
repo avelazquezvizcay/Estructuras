@@ -8,6 +8,71 @@
   </div>
 
   <div class="config-grid">
+  
+    <!-- Perfil de la Empresa -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--info">
+          <span class="material-symbols-rounded">storefront</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Perfil de la Empresa</h2>
+          <p class="config-section__desc">Datos utilizados para la generación de reportes y facturas en PDF</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+          
+          <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="logo-preview-wrapper" style="display: flex; align-items: center; gap: 1rem;">
+              @if (empresaLogo()) {
+                <img [src]="empresaLogo()" alt="Logo" style="width: 60px; height: 60px; border-radius: 8px; object-fit: contain; border: 1px solid var(--border-color);">
+              } @else {
+                <div style="width: 60px; height: 60px; border-radius: 8px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-color);">
+                  <span class="material-symbols-rounded" style="color: var(--text-secondary);">image</span>
+                </div>
+              }
+              <input type="file" accept="image/*" #logoInput (change)="onLogoSelected($event)" style="display: none;">
+              <button class="btn btn--secondary btn--sm" (click)="logoInput.click()">Subir Logo</button>
+            </div>
+
+            <div class="rif-scan-wrapper" style="margin-left: auto; border-left: 1px solid var(--border-color); padding-left: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">¿Ahorrar tiempo?</span>
+              <input type="file" accept="image/*" #rifInput (change)="onRifFileSelected($event)" style="display: none;">
+              <button class="btn btn--primary btn--sm" (click)="rifInput.click()" [disabled]="isScanningRif()">
+                @if (isScanningRif()) {
+                  <span class="loader-spinner"></span> Analizando...
+                } @else {
+                  <span class="material-symbols-rounded">scan</span> Leer datos desde RIF
+                }
+              </button>
+              <p style="font-size: 10px; color: var(--text-tertiary); margin: 0;">Soporta: JPG, PNG (Fotos)</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre Comercial / Razón Social</label>
+            <input type="text" [ngModel]="empresaNombre()" (ngModelChange)="empresaNombre.set($event)" placeholder="Ej. Mi Empresa C.A.">
+          </div>
+          
+          <div class="form-group">
+            <label>RIF / Documento</label>
+            <input type="text" [ngModel]="empresaRif()" (ngModelChange)="empresaRif.set($event)" placeholder="Ej. J-12345678-9">
+          </div>
+          
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Dirección Física</label>
+            <input type="text" [ngModel]="empresaDireccion()" (ngModelChange)="empresaDireccion.set($event)" placeholder="Ej. Av. Principal, Local 4, Caracas">
+          </div>
+        </div>
+        <div style="margin-top: 1.5rem; text-align: right;">
+          <button class="btn btn--primary" (click)="guardarDatosEmpresa()">
+            <span class="material-symbols-rounded">save</span>
+            Guardar Perfil
+          </button>
+        </div>
+      </div>
+    </section>
 
     <!-- Moneda Principal -->
     <section class="config-section card">
@@ -95,6 +160,41 @@
       </div>
     </section>
 
+    <!-- Métodos de Pago -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--success">
+          <span class="material-symbols-rounded">payments</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Métodos de Pago</h2>
+          <p class="config-section__desc">Gestiona las opciones de pago que aparecen al registrar facturas</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        <div class="payment-methods-manager" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="add-method-form" style="display: flex; gap: 0.5rem;">
+            <input type="text" [ngModel]="nuevoMetodo()" (ngModelChange)="nuevoMetodo.set($event)" 
+                   placeholder="Nuevo método (ej. PayPal, Zelle, Punto)"
+                   style="flex: 1;">
+            <button class="btn btn--primary btn--sm" (click)="addMetodoPago()" [disabled]="!nuevoMetodo().trim()">
+              <span class="material-symbols-rounded">add</span> Añadir
+            </button>
+          </div>
+          <div class="methods-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
+            @for (metodo of settingsService.metodosPago(); track metodo) {
+              <div class="method-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 14px; font-weight: 500;">{{ metodo }}</span>
+                <button class="btn btn--ghost btn--icon btn--sm" (click)="removeMetodoPago(metodo)" title="Eliminar">
+                  <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-danger);">delete</span>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Decimales -->
     <section class="config-section card">
       <div class="config-section__header">
@@ -177,6 +277,48 @@
           <span class="material-symbols-rounded" style="font-size:14px">info</span>
           Se descargará el archivo JSON y se abrirá tu cliente de correo para que lo adjuntes.
         </p>
+      </div>
+    </section>
+
+    <!-- Información de Licencia -->
+    <section class="config-section card">
+      <div class="config-section__header">
+        <div class="config-section__icon config-section__icon--primary">
+          <span class="material-symbols-rounded">verified_user</span>
+        </div>
+        <div>
+          <h2 class="config-section__title">Licencia del Software</h2>
+          <p class="config-section__desc">Estado de tu suscripción y validez del producto</p>
+        </div>
+      </div>
+      <div class="config-section__body">
+        @if (licenseService.license(); as lic) {
+          <div class="license-info-card">
+            <div class="license-info-card__row">
+              <span class="label">Empresa:</span>
+              <span class="value">{{ lic.empresa }}</span>
+            </div>
+            <div class="license-info-card__row">
+              <span class="label">Tipo:</span>
+              <span class="value badge" [class]="'badge--' + (lic.tipo === 'full' ? 'success' : lic.tipo === 'venta' ? 'primary' : 'warning')">
+                {{ lic.tipo | uppercase }}
+              </span>
+            </div>
+            @if (lic.tipo === 'trial') {
+              <div class="license-info-card__row">
+                <span class="label">Días restantes:</span>
+                <span class="value" [class.text-danger]="licenseService.daysRemaining() < 5">
+                  {{ licenseService.daysRemaining() }} días
+                </span>
+              </div>
+            }
+          </div>
+          <div style="margin-top: 1.5rem; text-align: right;">
+            <button class="btn btn--ghost btn--sm btn--danger" (click)="licenseService.logoutLicense()">
+              <span class="material-symbols-rounded">logout</span> Desactivar Licencia
+            </button>
+          </div>
+        }
       </div>
     </section>
 

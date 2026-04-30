@@ -7,13 +7,13 @@
       <p class="page-header__subtitle">Resumen general del sistema de costos</p>
     </div>
     <div class="page-header__actions">
-      <button class="btn btn--secondary" (click)="notifService.add('Exportación', 'La exportación general del dashboard está en desarrollo', 'info')">
+      <button class="btn btn--secondary" (click)="exportarDashboard()">
         <span class="material-symbols-rounded">download</span>
         Exportar
       </button>
       <button class="btn btn--primary" routerLink="/productos">
         <span class="material-symbols-rounded">add</span>
-        Nuevo Producto
+        Nuevo Prod. Elaborado
       </button>
     </div>
   </div>
@@ -86,7 +86,7 @@
     <section class="card chart-card">
       <div class="card__header">
         <h2 class="card__title">Costo vs Precio de Venta</h2>
-        <p class="card__subtitle">Comparativa de los primeros 7 productos</p>
+        <p class="card__subtitle">Comparativa de los primeros 7 productos elaborados</p>
       </div>
       <div class="card__content">
         <sec-chart [config]="chartCostos()"></sec-chart>
@@ -96,7 +96,7 @@
     <section class="card chart-card">
       <div class="card__header">
         <h2 class="card__title">Mix de Categorías</h2>
-        <p class="card__subtitle">Distribución de productos por rubro</p>
+        <p class="card__subtitle">Distribución de prods. elaborados por rubro</p>
       </div>
       <div class="card__content">
         <sec-chart [config]="chartCategorias()"></sec-chart>

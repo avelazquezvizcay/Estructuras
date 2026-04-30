@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Layout } from './shared/layout/layout';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { licenseGuard } from './core/guards/license.guard';
 
 export const routes: Routes = [
   {
@@ -10,9 +11,14 @@ export const routes: Routes = [
     title: 'Iniciar Sesión — SEC'
   },
   {
+    path: 'activacion',
+    loadComponent: () => import('./features/activacion/activacion').then(m => m.Activacion),
+    title: 'Activación de Software — SEC'
+  },
+  {
     path: '',
     component: Layout,
-    canActivate: [authGuard],
+    canActivate: [authGuard, licenseGuard],
     children: [
       {
         path: 'dashboard',
@@ -27,7 +33,7 @@ export const routes: Routes = [
       {
         path: 'productos',
         loadComponent: () => import('./features/productos/productos').then(m => m.Productos),
-        title: 'Productos — SEC'
+        title: 'Productos Elaborados — SEC'
       },
       {
         path: 'presupuestos',
