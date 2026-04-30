@@ -88,6 +88,9 @@
                   <button class="btn btn--ghost btn--icon" (click)="openEditModal(ins)" [attr.aria-label]="i18n.t('common.edit')">
                     <span class="material-symbols-rounded">edit</span>
                   </button>
+                  <button class="btn btn--ghost btn--icon" (click)="openMermaModal(ins)" aria-label="Registrar Merma" title="Registrar Merma">
+                    <span class="material-symbols-rounded" style="color: var(--accent-warning)">remove_shopping_cart</span>
+                  </button>
                   <button class="btn btn--ghost btn--icon" (click)="confirmDelete(ins)" [attr.aria-label]="i18n.t('common.delete')">
                     <span class="material-symbols-rounded">delete</span>
                   </button>
@@ -263,6 +266,44 @@
         <button class="btn btn--danger" (click)="executeDelete()">
           <span class="material-symbols-rounded">delete</span>
           {{ i18n.t('common.delete') }}
+        </button>
+      </div>
+    </div>
+  </sec-modal>
+}
+
+<!-- ═══ Merma Modal ═══ -->
+@if (showMermaModal() && mermaInsumo()) {
+  <sec-modal title="Registrar Merma / Pérdida" maxWidth="450px" (closed)="closeMermaModal()">
+    <div class="delete-confirm" style="text-align: left;">
+      <div class="delete-confirm__icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-warning);">
+        <span class="material-symbols-rounded">remove_shopping_cart</span>
+      </div>
+      <h3 style="text-align: center; margin-bottom: 16px;">Merma: {{ mermaInsumo()?.nombre }}</h3>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Cantidad a descontar (en {{ mermaInsumo()?.unidadBase }}) *</label>
+        <input type="number" step="any" min="0" [max]="mermaInsumo()?.stockActual || 0"
+               [ngModel]="formMermaCantidad()" (ngModelChange)="formMermaCantidad.set($event)">
+        <span class="form-hint">Stock actual: {{ mermaInsumo()?.stockActual }} {{ mermaInsumo()?.unidadBase }}</span>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Motivo de la merma *</label>
+        <select [ngModel]="formMermaMotivo()" (ngModelChange)="formMermaMotivo.set($event)">
+          <option value="" disabled>-- Selecciona un motivo --</option>
+          <option value="Vencimiento">Vencimiento</option>
+          <option value="Daño/Accidente">Daño / Accidente</option>
+          <option value="Ajuste Inventario">Ajuste de Inventario</option>
+          <option value="Uso Interno">Uso Interno / Muestras</option>
+        </select>
+      </div>
+
+      <div class="delete-confirm__actions">
+        <button class="btn btn--secondary" (click)="closeMermaModal()">Cancelar</button>
+        <button class="btn btn--primary" (click)="saveMerma()" style="background: var(--accent-warning); color: #fff; border: none;">
+          <span class="material-symbols-rounded">save</span>
+          Guardar Merma
         </button>
       </div>
     </div>

@@ -35,6 +35,7 @@
         <thead>
           <tr>
             <th>Usuario</th>
+            <th>Username</th>
             <th>Email</th>
             <th>Rol</th>
             <th>Creado</th>
@@ -50,6 +51,7 @@
                   <span class="user-cell__name">{{ user.nombre }}</span>
                 </div>
               </td>
+              <td class="cell-username"><strong>{{ user.username }}</strong></td>
               <td class="cell-email">{{ user.email }}</td>
               <td>
                 <select class="role-select" [class]="getRoleBadgeClass(user.role)"
@@ -139,7 +141,13 @@
           <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label>Nombre de la Empresa</label>
-              <input type="text" [ngModel]="genEmpresa()" (ngModelChange)="genEmpresa.set($event)" name="genEmpresa" placeholder="Nombre de la Empresa">
+              <div class="input-with-button">
+                <input type="text" [ngModel]="genEmpresa()" (ngModelChange)="genEmpresa.set($event)" name="genEmpresa" placeholder="Nombre de la Empresa">
+                <button type="button" class="btn btn--secondary btn--icon-only" (click)="rifInput.click()" title="Cargar desde RIF">
+                  <span class="material-symbols-rounded">image</span>
+                </button>
+                <input #rifInput type="file" hidden accept="image/*" (change)="onRifSelected($event)">
+              </div>
             </div>
             <div class="form-group">
               <label>Código de Equipo (Hardware ID)</label>
@@ -249,6 +257,10 @@
           <input type="text" placeholder="Nombre del usuario" [ngModel]="newName()" (ngModelChange)="newName.set($event)" name="name" required>
         </div>
         <div class="form-group">
+          <label>Nombre de usuario</label>
+          <input type="text" placeholder="juan123" [ngModel]="newUsername()" (ngModelChange)="newUsername.set($event)" name="username" required>
+        </div>
+        <div class="form-group">
           <label>Correo electrónico</label>
           <input type="email" placeholder="correo@ejemplo.com" [ngModel]="newEmail()" (ngModelChange)="newEmail.set($event)" name="email" required>
         </div>
@@ -291,6 +303,10 @@
         <div class="form-group">
           <label>Nombre completo</label>
           <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)" name="eName" required>
+        </div>
+        <div class="form-group">
+          <label>Nombre de usuario</label>
+          <input type="text" [ngModel]="editUsername()" (ngModelChange)="editUsername.set($event)" name="eUsername" required>
         </div>
         <div class="form-group">
           <label>Correo electrónico</label>

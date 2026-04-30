@@ -8,6 +8,7 @@ import { I18nService } from '../../core/services/i18n.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ChartConfiguration } from 'chart.js';
 import { ChartComponent } from '../../shared/components/chart/chart';
+import { AuthService } from '../../core/services/auth.service';
 import Decimal from 'decimal.js';
 
 @Component({
@@ -22,13 +23,20 @@ export class Insumos implements OnInit {
   protected readonly tasaService = inject(TasaCambioService);
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
 
   protected readonly searchTerm = signal('');
   protected readonly categoriaFilter = signal('Todas');
   protected readonly showModal = signal(false);
   protected readonly showDeleteConfirm = signal(false);
+  protected readonly showMermaModal = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly deletingInsumo = signal<InsumoView | null>(null);
+  protected readonly mermaInsumo = signal<InsumoView | null>(null);
+
+  // Merma fields
+  protected readonly formMermaCantidad = signal(0);
+  protected readonly formMermaMotivo = signal('');
 
   // Form fields
   protected readonly formNombre = signal('');
@@ -216,6 +224,40 @@ export class Insumos implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.resetForm();
+  }
+
+  openMermaModal(insumo: InsumoView): void {
+    this.mermaInsumo.set(insumo);
+    this.formMermaCantidad.set(0);
+    this.formMermaMotivo.set('');
+    this.showMermaModal.set(true);
+  }
+
+  closeMermaModal(): void {
+    this.showMermaModal.set(false);
+    this.mermaInsumo.set(null);
+  }
+
+  async saveMerma(): Promise<void> {
+    const insumo = this.mermaInsumo();
+    const cant = this.formMermaCantidad();
+    const motivo = this.formMermaMotivo().trim();
+
+    if (!insumo || cant <= 0 || !motivo) {
+      this.toast.error('Complete todos los campos correctamente');
+      return;
+    }
+    if (cant > insumo.stockActual) {
+      this.toast.error('La merma no puede ser mayor al stock actual');
+      return;
+    }
+
+    const userId = this.auth.currentUser()?.id || 'system';
+    const ok = await this.insumoService.registrarMerma(insumo.id, cant, motivo, userId);
+    
+    if (ok) {
+      this.closeMermaModal();
+    }
   }
 
   setCategoria(cat: string): void {

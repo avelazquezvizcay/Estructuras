@@ -35,34 +35,11 @@ export class Reportes {
     return this.insumoService.insumos().filter(i => i.stockActual > 0).length;
   });
 
-  protected readonly totalInsumosConInflacion = computed(() => {
-    // Esto es un simulacro para la vista previa, en real requeriría consulta asíncrona
-    return Math.floor(this.insumoService.insumos().length * 0.3);
-  });
-
   protected readonly promedioMargen = computed(() => {
     const prods = this.productoService.productos();
     if (!prods.length) return 0;
     const sum = prods.reduce((acc, p) => acc + parseFloat(p.precios[0]?.margenPct || '0'), 0);
     return (sum / prods.length).toFixed(1);
-  });
-
-  protected readonly utilidadPromedioUsd = computed(() => {
-    const prods = this.productoService.productos();
-    if (!prods.length) return new Decimal(0);
-    let sum = new Decimal(0);
-    let count = 0;
-    
-    prods.forEach(p => {
-      const precioStr = p.precios[0]?.precioUsd;
-      if (precioStr) {
-        const precio = new Decimal(precioStr);
-        sum = sum.plus(precio.minus(p.costoTotalUsd || 0));
-        count++;
-      }
-    });
-    
-    return count > 0 ? sum.div(count) : new Decimal(0);
   });
 
   protected readonly reportes = signal([
@@ -81,34 +58,6 @@ export class Reportes {
       color: 'success'
     },
     {
-      id: 'insumo-usage',
-      nombre: 'Uso de Insumos',
-      descripcion: 'Análisis de qué insumos son más utilizados en recetas y su impacto en costos.',
-      icono: 'analytics',
-      color: 'info'
-    },
-    {
-      id: 'margin-analysis',
-      nombre: 'Análisis de Márgenes',
-      descripcion: 'Comparativa de márgenes de utilidad entre productos para identificar los más rentables.',
-      icono: 'monitoring',
-      color: 'warning'
-    },
-    {
-      id: 'rate-history',
-      nombre: 'Histórico de Tasas',
-      descripcion: 'Evolución de las tasas de cambio BCV, Binance y Euro a lo largo del tiempo.',
-      icono: 'show_chart',
-      color: 'purple'
-    },
-    {
-      id: 'ficha-tecnica',
-      nombre: 'Ficha Técnica',
-      descripcion: 'Documento imprimible con la ficha técnica completa de un producto seleccionado.',
-      icono: 'description',
-      color: 'danger'
-    },
-    {
       id: 'inventory-value',
       nombre: 'Valorización de Inventario',
       descripcion: 'Cálculo del valor total de tus insumos en stock. Ideal para balances mensuales.',
@@ -121,13 +70,6 @@ export class Reportes {
       descripcion: 'Seguimiento de la variación de precios de tus insumos en el tiempo.',
       icono: 'trending_up',
       color: 'danger'
-    },
-    {
-      id: 'production-trend',
-      nombre: 'Tendencia de Producción',
-      descripcion: 'Resumen de los productos fabricados y materiales consumidos en el periodo.',
-      icono: 'stacked_line_chart',
-      color: 'info'
     }
   ]);
 
@@ -140,8 +82,6 @@ export class Reportes {
       this.exportarValorInventario(tipo);
     } else if (id === 'price-inflation') {
       this.exportarInflacion(tipo);
-    } else if (id === 'profit-projection') {
-      this.exportarProyeccion(tipo);
     } else {
       this.toast.info(`La exportación de "${id}" a ${tipo} está en desarrollo.`);
     }

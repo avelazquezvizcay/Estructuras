@@ -51,29 +51,34 @@
               <span class="stat-value">{{ totalInsumosStock() }}</span>
             </div>
           </div>
-        } @else if (activeReport() === 'profit-projection' || activeReport() === 'margin-analysis') {
+        } @else if (activeReport() === 'cost-structure') {
           <div class="preview-stats">
+            <div class="stat-box">
+              <span class="stat-label">Productos Analizados</span>
+              <span class="stat-value">{{ productoService.productos().length }}</span>
+            </div>
+          </div>
+          <p class="preview-hint" style="margin-top: 15px; text-align: center; font-size: 12px; color: var(--text-tertiary);">
+            Este reporte detallará la receta y el costo de línea por cada insumo de tus productos.
+          </p>
+        } @else if (activeReport() === 'price-list') {
+          <div class="preview-stats">
+            <div class="stat-box">
+              <span class="stat-label">Productos Activos</span>
+              <span class="stat-value">{{ productoService.productos().length }}</span>
+            </div>
             <div class="stat-box">
               <span class="stat-label">Margen Promedio</span>
               <span class="stat-value">{{ promedioMargen() }}%</span>
             </div>
-            <div class="stat-box">
-              <span class="stat-label">Ganancia Promedio</span>
-              <span class="stat-value">${{ utilidadPromedioUsd().toFixed(2) }}</span>
-            </div>
           </div>
           <p class="preview-hint" style="margin-top: 15px; text-align: center; font-size: 12px; color: var(--text-tertiary);">
-            Este análisis se basa en el Precio al Detal de tus {{ productoService.productos().length }} productos.
+            Se exportará la lista de precios al Detal, Mayor y Super Mayor en USD y Bs.
           </p>
-        } @else if (activeReport() === 'cost-structure') {
-          <div class="preview-placeholder">
-            <span class="material-symbols-rounded">pie_chart</span>
-            <p>Se analizarán {{ productoService.productos().length }} estructuras de costos.</p>
-          </div>
         } @else if (activeReport() === 'price-inflation') {
           <div class="preview-placeholder">
             <span class="material-symbols-rounded">trending_up</span>
-            <p>Se detectaron variaciones en {{ totalInsumosConInflacion() }} insumos este mes.</p>
+            <p>El sistema analizará el historial de costos de cada insumo para calcular su porcentaje de inflación.</p>
           </div>
         } @else {
           <div class="empty-preview">

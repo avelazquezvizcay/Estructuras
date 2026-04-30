@@ -2,8 +2,8 @@
   <div class="login-card">
     <!-- Logo -->
     <div class="login-card__logo">
-      <div class="login-card__logo-icon">
-        <span class="material-symbols-rounded">analytics</span>
+      <div class="login-card__logo-img">
+        <img src="sec_icon.png" alt="SEC Logo">
       </div>
       <h1 class="login-card__logo-title">SEC</h1>
       <p class="login-card__logo-sub">Sistema de Estructura de Costos</p>
@@ -16,11 +16,11 @@
         <p class="login-form__subtitle">Ingresa tus credenciales para acceder al sistema</p>
 
         <div class="form-group">
-          <label for="loginEmail">Correo electrónico</label>
+          <label for="loginEmail">Usuario o Correo</label>
           <div class="input-icon-wrap">
-            <span class="material-symbols-rounded input-icon">mail</span>
-            <input id="loginEmail" type="email" placeholder="admin@sec.local"
-                   [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required autocomplete="email">
+            <span class="material-symbols-rounded input-icon">person</span>
+            <input id="loginEmail" type="text" placeholder="admin o admin@sec.local"
+                   [ngModel]="identifier()" (ngModelChange)="identifier.set($event)" name="identifier" required>
           </div>
         </div>
 
@@ -49,11 +49,6 @@
           <span>¿No tienes cuenta?</span>
           <button type="button" class="login-form__link" (click)="toggleMode()">Regístrate aquí</button>
         </div>
-
-        <div class="login-form__hint">
-          <span class="material-symbols-rounded">info</span>
-          Demo: admin&#64;sec.local / admin123
-        </div>
       </form>
     }
 
@@ -73,11 +68,20 @@
         </div>
 
         <div class="form-group">
+          <label for="regUsername">Nombre de usuario</label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-rounded input-icon">alternate_email</span>
+            <input id="regUsername" type="text" placeholder="ejemplo: juan123"
+                   [ngModel]="username()" (ngModelChange)="username.set($event)" name="username" required>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label for="regEmail">Correo electrónico</label>
           <div class="input-icon-wrap">
             <span class="material-symbols-rounded input-icon">mail</span>
             <input id="regEmail" type="email" placeholder="correo@ejemplo.com"
-                   [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required autocomplete="email">
+                   [ngModel]="identifier()" (ngModelChange)="identifier.set($event)" name="email" required autocomplete="email">
           </div>
         </div>
 

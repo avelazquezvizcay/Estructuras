@@ -1,41 +1,38 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface SqliteResult {
   lastInsertRowid: number | string;
   changes: number;
 }
 
-declare global {
-  interface Window {
-    electronAPI: {
-      dbAll: (sql: string, params?: any[]) => Promise<any[]>;
-      dbGet: (sql: string, params?: any[]) => Promise<any>;
-      dbRun: (sql: string, params?: any[]) => Promise<SqliteResult>;
-      dbTransaction: (statements: { sql: string; params: any[] }[]) => Promise<{ success: boolean }>;
-    };
-  }
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class SqliteDatabaseService {
+  private http = inject(HttpClient);
+  // Usa window.location.hostname para que funcione desde el celular en la red local
+  private apiUrl = environment.apiUrl || `http://${window.location.hostname}:3000/api`;
+
   constructor() {}
 
   async all<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-    return await window.electronAPI.dbAll(sql, params);
+    return firstValueFrom(this.http.post<T[]>(`${this.apiUrl}/db/all`, { sql, params }));
   }
 
   async get<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
-    return await window.electronAPI.dbGet(sql, params);
+    const res = await firstValueFrom(this.http.post<T>(`${this.apiUrl}/db/get`, { sql, params }));
+    return res === null ? undefined : res;
   }
 
   async run(sql: string, params: any[] = []): Promise<SqliteResult> {
-    return await window.electronAPI.dbRun(sql, params);
+    return firstValueFrom(this.http.post<SqliteResult>(`${this.apiUrl}/db/run`, { sql, params }));
   }
 
   async transaction(statements: { sql: string; params: any[] }[]): Promise<boolean> {
-    const result = await window.electronAPI.dbTransaction(statements);
-    return result.success;
+    const res = await firstValueFrom(this.http.post<{success: boolean}>(`${this.apiUrl}/db/transaction`, { statements }));
+    return res.success;
   }
 }

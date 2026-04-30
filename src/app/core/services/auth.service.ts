@@ -7,6 +7,7 @@ export type UserRole = 'master' | 'admin' | 'supervisor' | 'user';
 
 export interface AppUser {
   id: string;
+  username: string;
   email: string;
   nombre: string;
   role: UserRole;
@@ -37,8 +38,9 @@ const DEFAULT_MODULES: ModuleConfig[] = [
   { id: 'asistente_ia', label: 'Asistente IA (Groq)', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
 ];
 
-const DEFAULT_MASTER: AppUser = {
+const DEFAULT_MASTER: AppUser & { username: string } = {
   id: 'master-001',
+  username: 'admin',
   email: 'admin@sec.local',
   nombre: 'Administrador',
   role: 'master',
@@ -90,15 +92,15 @@ export class AuthService {
     await this.loadState();
   }
 
-  async login(email: string, password: string): Promise<boolean> {
+  async login(identifier: string, password: string): Promise<boolean> {
     try {
       const user = await this.sqlite.get<AppUser & { passwordHash: string }>(
-        'SELECT * FROM users WHERE email = ?', 
-        [email.toLowerCase()]
+        'SELECT * FROM users WHERE email = ? OR username = ?', 
+        [identifier.toLowerCase(), identifier.toLowerCase()]
       );
 
       if (!user) {
-        this.toast.error('Usuario no encontrado');
+        this.toast.error('Usuario o correo no encontrado');
         return false;
       }
 
@@ -128,11 +130,11 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  async register(data: { email: string; nombre: string; password: string; role?: UserRole }): Promise<boolean> {
+  async register(data: { email: string; username: string; nombre: string; password: string; role?: UserRole }): Promise<boolean> {
     try {
-      const existing = await this.sqlite.get('SELECT id FROM users WHERE email = ?', [data.email.toLowerCase()]);
+      const existing = await this.sqlite.get('SELECT id FROM users WHERE email = ? OR username = ?', [data.email.toLowerCase(), data.username.toLowerCase()]);
       if (existing) {
-        this.toast.error('El correo ya está registrado');
+        this.toast.error('El correo o el usuario ya están registrados');
         return false;
       }
 
@@ -142,8 +144,8 @@ export class AuthService {
       const role = data.role || 'user';
 
       await this.sqlite.run(
-        'INSERT INTO users (id, email, nombre, role, passwordHash, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, data.email.toLowerCase(), data.nombre, role, passwordHash, createdAt]
+        'INSERT INTO users (id, username, email, nombre, role, passwordHash, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, data.username.toLowerCase(), data.email.toLowerCase(), data.nombre, role, passwordHash, createdAt]
       );
 
       await this.loadUsers();
@@ -216,6 +218,7 @@ export class AuthService {
     if (!users.find(u => u.role === 'master')) {
       await this.register({
         email: DEFAULT_MASTER.email,
+        username: DEFAULT_MASTER.username,
         nombre: DEFAULT_MASTER.nombre,
         password: 'admin123',
         role: 'master'

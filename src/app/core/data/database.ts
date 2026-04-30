@@ -82,3 +82,14 @@ export interface TasaHistorialRecord {
   source: string;
   manual: boolean | number; // SQLite returns 0/1
 }
+
+export interface MermaRecord {
+  id: string;
+  insumoId: string;
+  cantidad: number;
+  unidad: string;
+  motivo: string;
+  costoPerdidoUsd: string;
+  fecha: string;
+  usuarioId: string;
+}

@@ -4,7 +4,7 @@
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "concurrently \"ng serve --host 0.0.0.0\" \"node electron/server.js\"",
     "build": "ng build --base-href ./",
     "electron": "electron .",
     "electron:build": "npm run build && electron-builder",
@@ -22,7 +22,9 @@
     "@angular/router": "^21.2.0",
     "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
+    "cors": "^2.8.6",
     "decimal.js": "^10.6.0",
+    "express": "^5.2.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "rxjs": "~7.8.0",
@@ -33,6 +35,7 @@
     "@angular/build": "^21.2.8",
     "@angular/cli": "^21.2.8",
     "@angular/compiler-cli": "^21.2.0",
+    "concurrently": "^9.2.1",
     "electron": "^41.3.0",
     "electron-builder": "^26.8.1",
     "electron-is-dev": "^3.0.1",
@@ -53,7 +56,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "src/favicon.png"
+      "icon": "public/sec_icon.png"
     }
   }
 }

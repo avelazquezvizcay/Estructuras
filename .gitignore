@@ -46,3 +46,11 @@ Thumbs.db
 # Environments (Secrets)
 src/environments/environment.ts
 
+# Application specific
+node_modules/
+**/node_modules/
+dist/
+dist-electron/
+*.sqlite
+*.db
+backend/

@@ -15,7 +15,8 @@ export class Login {
   private readonly router = inject(Router);
 
   protected readonly mode = signal<'login' | 'register'>('login');
-  protected readonly email = signal('');
+  protected readonly identifier = signal('');
+  protected readonly username = signal('');
   protected readonly password = signal('');
   protected readonly nombre = signal('');
   protected readonly confirmPassword = signal('');
@@ -23,11 +24,11 @@ export class Login {
   protected readonly loading = signal(false);
 
   async onLogin(): Promise<void> {
-    if (!this.email() || !this.password()) return;
+    if (!this.identifier() || !this.password()) return;
     this.loading.set(true);
     // Small delay for UX
     await new Promise(r => setTimeout(r, 400));
-    const ok = await this.auth.login(this.email(), this.password());
+    const ok = await this.auth.login(this.identifier(), this.password());
     this.loading.set(false);
     if (ok) {
       this.router.navigate(['/dashboard']);
@@ -35,14 +36,15 @@ export class Login {
   }
 
   async onRegister(): Promise<void> {
-    if (!this.email() || !this.password() || !this.nombre()) return;
+    if (!this.identifier() || !this.username() || !this.password() || !this.nombre()) return;
     if (this.password() !== this.confirmPassword()) {
       return;
     }
     this.loading.set(true);
     await new Promise(r => setTimeout(r, 400));
     const ok = await this.auth.register({
-      email: this.email(),
+      email: this.identifier(),
+      username: this.username(),
       nombre: this.nombre(),
       password: this.password()
     });

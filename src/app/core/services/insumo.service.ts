@@ -238,4 +238,47 @@ export class InsumoService {
       await this.create(item);
     }
   }
+
+
+
+  async registrarMerma(insumoId: string, cantidad: number, motivo: string, usuarioId: string): Promise<boolean> {
+    const record = await this.sqlite.get<InsumoRecord>('SELECT * FROM insumos WHERE id = ?', [insumoId]);
+    if (!record) {
+      this.toast.error('Insumo no encontrado');
+      return false;
+    }
+
+    if (cantidad <= 0 || cantidad > record.stockActual) {
+      this.toast.error('Cantidad de merma inválida');
+      return false;
+    }
+
+    const costoUnit = new Decimal(record.costoUnidadBaseUsd);
+    const costoPerdido = costoUnit.mul(cantidad).toString();
+    const newStock = record.stockActual - cantidad;
+    const mermaId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    const fecha = new Date().toISOString();
+
+    const statements = [
+      {
+        sql: 'UPDATE insumos SET stockActual = ? WHERE id = ?',
+        params: [newStock, insumoId]
+      },
+      {
+        sql: 'INSERT INTO mermas (id, insumoId, cantidad, unidad, motivo, costoPerdidoUsd, fecha, usuarioId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        params: [mermaId, insumoId, cantidad, record.unidadBase, motivo, costoPerdido, fecha, usuarioId]
+      }
+    ];
+
+    try {
+      await this.sqlite.transaction(statements);
+      await this.loadAll();
+      this.toast.success('Merma registrada y stock actualizado');
+      return true;
+    } catch (e) {
+      console.error('Error al registrar merma', e);
+      this.toast.error('Error al registrar la merma');
+      return false;
+    }
+  }
 }

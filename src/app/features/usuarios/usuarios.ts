@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService, AppUser, UserRole, ModuleConfig } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LicenseService, LicenseType } from '../../core/services/license.service';
+import { GeminiAiService } from '../../core/services/gemini-ai.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'sec-usuarios',
@@ -17,6 +19,7 @@ export class Usuarios {
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly licenseService = inject(LicenseService);
+  private readonly geminiAi = inject(GeminiAiService);
 
   protected readonly activeTab = signal<'users' | 'modules' | 'licensing'>('users');
   protected readonly showCreateModal = signal(false);
@@ -27,6 +30,7 @@ export class Usuarios {
   protected readonly selectedUser = signal<AppUser | null>(null);
   protected readonly selectedUserId = signal<string | null>(null);
   protected readonly editName = signal('');
+  protected readonly editUsername = signal('');
   protected readonly editEmail = signal('');
   protected readonly editRole = signal<UserRole>('user');
   protected readonly newPasswordReset = signal('');
@@ -42,18 +46,20 @@ export class Usuarios {
 
   // New user form
   protected readonly newName = signal('');
+  protected readonly newUsername = signal('');
   protected readonly newEmail = signal('');
   protected readonly newPassword = signal('');
   protected readonly newRole = signal<UserRole>('user');
 
   async createUser(): Promise<void> {
-    if (!this.newName() || !this.newEmail() || !this.newPassword()) {
+    if (!this.newName() || !this.newUsername() || !this.newEmail() || !this.newPassword()) {
       this.toast.error('Completa todos los campos');
       return;
     }
 
     const ok = await this.auth.register({
       email: this.newEmail(),
+      username: this.newUsername(),
       nombre: this.newName(),
       password: this.newPassword(),
       role: this.newRole()
@@ -62,6 +68,7 @@ export class Usuarios {
     if (ok) {
       this.showCreateModal.set(false);
       this.newName.set('');
+      this.newUsername.set('');
       this.newEmail.set('');
       this.newPassword.set('');
       this.newRole.set('user');
@@ -71,6 +78,7 @@ export class Usuarios {
   openEdit(user: AppUser): void {
     this.selectedUser.set(user);
     this.editName.set(user.nombre);
+    this.editUsername.set(user.username);
     this.editEmail.set(user.email);
     this.editRole.set(user.role);
     this.showEditModal.set(true);
@@ -82,6 +90,7 @@ export class Usuarios {
 
     await this.auth.updateUser(user.id, {
       nombre: this.editName(),
+      username: this.editUsername(),
       email: this.editEmail(),
       role: this.editRole()
     });
@@ -157,6 +166,31 @@ export class Usuarios {
     const key = this.licenseService.generateKey(this.genEmpresa(), this.genTipo(), this.genDias(), hId);
     this.generatedKey.set(key);
     this.toast.success('Licencia generada correctamente');
+  }
+
+  async onRifSelected(event: any): Promise<void> {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!environment.geminiApiKey) {
+      this.toast.warning('Configura el API Key de Gemini para usar esta función');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e: any) => {
+      const base64 = e.target.result;
+      this.toast.info('Analizando RIF con IA...');
+      
+      const data = await this.geminiAi.analyzeRifImage(base64);
+      if (data && data.nombre) {
+        this.genEmpresa.set(data.nombre);
+        this.toast.success('Datos extraídos correctamente');
+      } else {
+        this.toast.error('No se pudieron extraer datos del RIF');
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   copyKey(): void {

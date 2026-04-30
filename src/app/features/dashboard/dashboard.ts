@@ -173,14 +173,25 @@ export class Dashboard {
   });
 
   protected readonly chartTendenciaTasas = computed<ChartConfiguration>(() => {
+    // Get last 7 days from history, sort oldest to newest for the chart
+    const history = this.tasaService.historial().slice(0, 7).reverse();
+    
+    // If we don't have enough data, provide a graceful fallback or just show what we have
+    const labels = history.length > 0 
+      ? history.map(h => new Date(h.fecha).toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit' })) 
+      : ['Sin datos'];
+
+    const dataBcv = history.length > 0 ? history.map(h => h.bcv) : [0];
+    const dataBinance = history.length > 0 ? history.map(h => h.binance) : [0];
+
     return {
       type: 'line',
       data: {
-        labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
+        labels,
         datasets: [
           {
             label: 'BCV (Bs)',
-            data: [78.5, 79.2, 80.1, 82.5, 84.0, 85.2, 86.89],
+            data: dataBcv,
             borderColor: '#22c55e',
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
             fill: true,
@@ -188,7 +199,7 @@ export class Dashboard {
           },
           {
             label: 'Binance (Bs)',
-            data: [80.1, 81.5, 82.0, 85.0, 86.2, 88.0, 89.5],
+            data: dataBinance,
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.1)',
             fill: true,
