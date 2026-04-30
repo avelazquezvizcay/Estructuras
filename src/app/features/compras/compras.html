@@ -111,31 +111,33 @@
     <div class="carga-factura">
       
       <!-- IA Action -->
-      <div class="ia-banner">
-        <div class="ia-info">
-          <span class="material-symbols-rounded">auto_awesome</span>
-          <div>
-            <strong>¿Quieres ahorrar tiempo?</strong>
-            <p>Sube una foto de tu factura y yo leeré los datos por ti (OCR Local).</p>
+      @if (auth.hasModule('ia_facturas')) {
+        <div class="ia-banner">
+          <div class="ia-info">
+            <span class="material-symbols-rounded">auto_awesome</span>
+            <div>
+              <strong>¿Quieres ahorrar tiempo?</strong>
+              <p>Sube una foto de tu factura y yo leeré los datos por ti (OCR Local).</p>
+            </div>
+          </div>
+          <div class="ia-actions" style="display: flex; gap: 1rem; align-items: center;">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+            <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
+              @if (isScanning()) {
+                <span class="loader-spinner"></span> Procesando...
+              } @else {
+                <span class="material-symbols-rounded">photo_camera</span> Seleccionar Foto
+              }
+            </button>
+            
+            @if (imagePreviewUrl()) {
+              <div class="image-preview" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+                <img [src]="imagePreviewUrl()" alt="Preview de factura" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            }
           </div>
         </div>
-        <div class="ia-actions" style="display: flex; gap: 1rem; align-items: center;">
-          <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
-          <button class="btn btn--secondary" (click)="fileInput.click()" [disabled]="isScanning()">
-            @if (isScanning()) {
-              <span class="loader-spinner"></span> Procesando...
-            } @else {
-              <span class="material-symbols-rounded">photo_camera</span> Seleccionar Foto
-            }
-          </button>
-          
-          @if (imagePreviewUrl()) {
-            <div class="image-preview" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
-              <img [src]="imagePreviewUrl()" alt="Preview de factura" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-          }
-        </div>
-      </div>
+      }
 
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
         <div class="form-group">

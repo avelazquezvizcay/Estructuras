@@ -35,7 +35,9 @@ const DEFAULT_MODULES: ModuleConfig[] = [
   { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
   { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
   { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'asistente_ia', label: 'Asistente IA (Groq)', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'ia_facturas', label: 'IA: Extracción Facturas', icon: 'auto_awesome', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'ia_rif', label: 'IA: Extracción RIF', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'asistente_ia', label: 'IA: Chat Asistente', icon: 'psychology', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
 ];
 
 const DEFAULT_MASTER: AppUser & { username: string } = {

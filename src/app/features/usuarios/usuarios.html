@@ -143,10 +143,12 @@
               <label>Nombre de la Empresa</label>
               <div class="input-with-button">
                 <input type="text" [ngModel]="genEmpresa()" (ngModelChange)="genEmpresa.set($event)" name="genEmpresa" placeholder="Nombre de la Empresa">
-                <button type="button" class="btn btn--secondary btn--icon-only" (click)="rifInput.click()" title="Cargar desde RIF">
-                  <span class="material-symbols-rounded">image</span>
-                </button>
-                <input #rifInput type="file" hidden accept="image/*" (change)="onRifSelected($event)">
+                @if (auth.hasModule('ia_rif')) {
+                  <button type="button" class="btn btn--secondary btn--icon-only" (click)="rifInput.click()" title="Cargar desde RIF">
+                    <span class="material-symbols-rounded">image</span>
+                  </button>
+                  <input #rifInput type="file" hidden accept="image/*" (change)="onRifSelected($event)">
+                }
               </div>
             </div>
             <div class="form-group">
