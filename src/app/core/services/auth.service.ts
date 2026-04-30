@@ -214,10 +214,11 @@ export class AuthService {
   }
 
   private async loadUsers(): Promise<void> {
-    const users = await this.sqlite.all<AppUser>('SELECT id, email, nombre, role, createdAt FROM users');
+    const users = await this.sqlite.all<AppUser>('SELECT id, username, email, nombre, role, createdAt FROM users');
     this._users.set(users);
 
-    if (!users.find(u => u.role === 'master')) {
+    const master = users.find(u => u.role === 'master');
+    if (!master) {
       await this.register({
         email: DEFAULT_MASTER.email,
         username: DEFAULT_MASTER.username,
@@ -225,6 +226,9 @@ export class AuthService {
         password: 'admin123',
         role: 'master'
       });
+    } else if (!master.username) {
+      // Fix for existing master user without username
+      await this.updateUser(master.id, { username: DEFAULT_MASTER.username });
     }
   }
 
