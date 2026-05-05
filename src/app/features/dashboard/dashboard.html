@@ -83,15 +83,24 @@
   
   <!-- ═══ Charts Section ═══ -->
   <div class="charts-grid animate-fade-in-up" style="animation-delay: 50ms">
-    <section class="card chart-card">
-      <div class="card__header">
-        <h2 class="card__title">{{ i18n.t('dashboard.costVsSale') || 'Costo vs Precio de Venta' }}</h2>
-        <p class="card__subtitle">{{ i18n.t('dashboard.costVsSaleDesc') || 'Comparativa de los primeros 7 productos elaborados' }}</p>
-      </div>
-      <div class="card__content">
-        <sec-chart [config]="chartCostos()"></sec-chart>
-      </div>
-    </section>
+    @if (auth.canViewFinancials()) {
+      <section class="card chart-card">
+        <div class="card__header">
+          <h2 class="card__title">{{ i18n.t('dashboard.costVsSale') || 'Costo vs Precio de Venta' }}</h2>
+          <p class="card__subtitle">{{ i18n.t('dashboard.costVsSaleDesc') || 'Comparativa de los primeros 7 productos elaborados' }}</p>
+        </div>
+        <div class="card__content">
+          <sec-chart [config]="chartCostos()"></sec-chart>
+        </div>
+      </section>
+    } @else {
+      <section class="card chart-card chart-card--restricted">
+        <div class="restricted-overlay">
+          <span class="material-symbols-rounded">lock</span>
+          <p>{{ i18n.t('dashboard.restrictedChart') || 'Gráfico restringido para este rol' }}</p>
+        </div>
+      </section>
+    }
 
     <section class="card chart-card">
       <div class="card__header">
@@ -131,15 +140,24 @@
     }
 
     <!-- Advanced Analytics (New) -->
-    <section class="card animate-fade-in-up">
-      <div class="card__header">
-        <h2 class="card__title">{{ i18n.t('dashboard.profitabilityRadar') }}</h2>
-        <p class="card__subtitle">{{ i18n.t('dashboard.marginVsCost') }}</p>
-      </div>
-      <div class="card__content" style="height: 350px;">
-        <sec-chart [config]="chartRentabilidad()"></sec-chart>
-      </div>
-    </section>
+    @if (auth.canViewFinancials()) {
+      <section class="card animate-fade-in-up">
+        <div class="card__header">
+          <h2 class="card__title">{{ i18n.t('dashboard.profitabilityRadar') }}</h2>
+          <p class="card__subtitle">{{ i18n.t('dashboard.marginVsCost') }}</p>
+        </div>
+        <div class="card__content" style="height: 350px;">
+          <sec-chart [config]="chartRentabilidad()"></sec-chart>
+        </div>
+      </section>
+    } @else {
+      <section class="card chart-card--restricted animate-fade-in-up">
+        <div class="restricted-overlay">
+          <span class="material-symbols-rounded">lock</span>
+          <p>{{ i18n.t('dashboard.restrictedChart') || 'Gráfico restringido para este rol' }}</p>
+        </div>
+      </section>
+    }
 
     <section class="card animate-fade-in-up">
       <div class="card__header">
@@ -175,14 +193,24 @@
             <div class="product-row__info">
               <span class="product-row__name">{{ prod.nombre }}</span>
               <span class="product-row__meta">
-                Costo: <strong class="currency-value currency-value--usd">${{ prod.costoTotalUsd.toFixed(2) }}</strong>
+                Costo: <strong class="currency-value currency-value--usd">
+                  @if (auth.canViewFinancials()) {
+                    ${{ prod.costoTotalUsd.toFixed(2) }}
+                  } @else {
+                    ***
+                  }
+                </strong>
               </span>
             </div>
             <div class="product-row__right">
-              <span class="product-row__price currency-value currency-value--usd">
-                ${{ (prod.precios[0]?.precioUsd || '0') }}
-              </span>
-              <span class="badge badge--success">{{ (prod.precios[0]?.margenPct || '0') }}%</span>
+              @if (auth.canViewFinancials()) {
+                <span class="product-row__price currency-value currency-value--usd">
+                  ${{ (prod.precios[0]?.precioUsd || '0') }}
+                </span>
+                <span class="badge badge--success">{{ (prod.precios[0]?.margenPct || '0') }}%</span>
+              } @else {
+                <span class="badge badge--neutral">Restringido</span>
+              }
             </div>
           </div>
         }

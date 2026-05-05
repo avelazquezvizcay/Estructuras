@@ -7,6 +7,7 @@ import { ProductoService } from '../../core/services/producto.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { DashboardKpi } from '../../core/models/domain.models';
 import { I18nService } from '../../core/services/i18n.service';
+import { AuthService } from '../../core/services/auth.service';
 
 import { RouterLink } from '@angular/router';
 import { ChartComponent } from '../../shared/components/chart/chart';
@@ -26,45 +27,52 @@ export class Dashboard {
   protected readonly productoService = inject(ProductoService);
   protected readonly notifService = inject(NotificationService);
   protected readonly i18n = inject(I18nService);
+  protected readonly auth = inject(AuthService);
 
-  protected readonly kpis = computed<DashboardKpi[]>(() => [
-    {
-      label: this.i18n.t('dashboard.registeredProducts'),
-      value: this.productoService.count().toString(),
-      subvalue: 'Activos en catálogo',
-      icon: 'bakery_dining',
-      trend: 'up',
-      trendValue: '',
-      color: 'primary'
-    },
-    {
-      label: this.i18n.t('dashboard.activeInputs'),
-      value: this.insumoService.count().toString(),
-      subvalue: `${this.insumoService.categorias().length - 1} ${this.i18n.t('dashboard.categories')}`,
-      icon: 'inventory_2',
-      trend: 'up',
-      trendValue: '',
-      color: 'success'
-    },
-    {
-      label: this.i18n.t('dashboard.avgCost'),
-      value: `$${this.productoService.promedioCosto().toFixed(2)}`,
-      subvalue: this.i18n.t('dashboard.perProduct'),
-      icon: 'trending_up',
-      trend: 'neutral',
-      trendValue: '',
-      color: 'warning'
-    },
-    {
-      label: this.i18n.t('dashboard.avgMargin'),
-      value: `${this.productoService.promedioMargen().toFixed(0)}%`,
-      subvalue: this.i18n.t('dashboard.ofProfit'),
-      icon: 'percent',
-      trend: 'neutral',
-      trendValue: '',
-      color: 'info'
-    }
-  ]);
+  /** Whether current user can see financial data (costs, margins, profits) */
+  protected readonly canViewFinancials = computed(() => this.auth.canViewFinancials());
+
+  protected readonly kpis = computed<DashboardKpi[]>(() => {
+    const masked = !this.auth.canViewFinancials();
+    return [
+      {
+        label: this.i18n.t('dashboard.registeredProducts'),
+        value: this.productoService.count().toString(),
+        subvalue: 'Activos en catálogo',
+        icon: 'bakery_dining',
+        trend: 'up',
+        trendValue: '',
+        color: 'primary'
+      },
+      {
+        label: this.i18n.t('dashboard.activeInputs'),
+        value: this.insumoService.count().toString(),
+        subvalue: `${this.insumoService.categorias().length - 1} ${this.i18n.t('dashboard.categories')}`,
+        icon: 'inventory_2',
+        trend: 'up',
+        trendValue: '',
+        color: 'success'
+      },
+      {
+        label: this.i18n.t('dashboard.avgCost'),
+        value: masked ? '***' : `$${this.productoService.promedioCosto().toFixed(2)}`,
+        subvalue: masked ? this.i18n.t('dashboard.restricted') || 'Restringido' : this.i18n.t('dashboard.perProduct'),
+        icon: 'trending_up',
+        trend: 'neutral',
+        trendValue: '',
+        color: 'warning'
+      },
+      {
+        label: this.i18n.t('dashboard.avgMargin'),
+        value: masked ? '***' : `${this.productoService.promedioMargen().toFixed(0)}%`,
+        subvalue: masked ? this.i18n.t('dashboard.restricted') || 'Restringido' : this.i18n.t('dashboard.ofProfit'),
+        icon: 'percent',
+        trend: 'neutral',
+        trendValue: '',
+        color: 'info'
+      }
+    ];
+  });
 
   protected readonly filtroProductos = signal<'mayor_margen' | 'menor_costo'>('mayor_margen');
 

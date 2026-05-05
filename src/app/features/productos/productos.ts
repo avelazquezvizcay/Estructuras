@@ -7,6 +7,7 @@ import { TasaCambioService } from '../../core/services/tasa-cambio.service';
 import { I18nService } from '../../core/services/i18n.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ExportService } from '../../core/services/export.service';
+import { AuthService } from '../../core/services/auth.service';
 import Decimal from 'decimal.js';
 
 @Component({
@@ -23,6 +24,7 @@ export class Productos implements OnInit {
   protected readonly i18n = inject(I18nService);
   private readonly toast = inject(ToastService);
   private readonly exportService = inject(ExportService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly viewMode = signal<'grid' | 'table'>('grid');
   protected readonly showModal = signal(false);

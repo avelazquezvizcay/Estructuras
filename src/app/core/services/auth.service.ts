@@ -73,6 +73,12 @@ export class AuthService {
     return role === 'master' || role === 'admin' || role === 'supervisor';
   });
 
+  /** Only master and admin can see costs, margins, and profitability data */
+  readonly canViewFinancials = computed(() => {
+    const role = this._currentUser()?.role;
+    return role === 'master' || role === 'admin';
+  });
+
   readonly visibleModules = computed(() => {
     const user = this._currentUser();
     if (!user) return [];

@@ -1,11 +1,72 @@
-const { app, BrowserWindow, Tray, Menu } = require('electron');
+const { app, BrowserWindow, Tray, Menu, dialog } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 const isDev = !app.isPackaged;
 const { startServer } = require('./server');
 
 let mainWindow;
 let tray = null;
 let isQuitting = false;
+
+// ═══ Auto-Updater Configuration ═══
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+function setupAutoUpdater() {
+  if (isDev) return; // Skip in development
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[Updater] Checking for updates...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[Updater] Update available:', info.version);
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[Updater] App is up to date.');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    const msg = `Downloading update: ${Math.round(progress.percent)}%`;
+    console.log('[Updater]', msg);
+    if (mainWindow) {
+      mainWindow.setProgressBar(progress.percent / 100);
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[Updater] Update downloaded:', info.version);
+    if (mainWindow) {
+      mainWindow.setProgressBar(-1); // Remove progress bar
+    }
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Actualización disponible',
+      message: `SEC v${info.version} está lista para instalar.`,
+      detail: 'La actualización se instalará al reiniciar la aplicación. ¿Deseas reiniciar ahora?',
+      buttons: ['Reiniciar ahora', 'Más tarde'],
+      defaultId: 0
+    }).then((result) => {
+      if (result.response === 0) {
+        isQuitting = true;
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[Updater] Error:', err.message);
+  });
+
+  // Check for updates after a short delay
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch(err => {
+      console.error('[Updater] Check failed:', err.message);
+    });
+  }, 5000);
+}
 
 function createWindow() {
   const { width, height } = require('electron').screen.getPrimaryDisplay().workAreaSize;
@@ -61,6 +122,15 @@ function createTray() {
       } 
     },
     { type: 'separator' },
+    {
+      label: 'Buscar actualizaciones',
+      click: () => {
+        if (!isDev) {
+          autoUpdater.checkForUpdatesAndNotify();
+        }
+      }
+    },
+    { type: 'separator' },
     { 
       label: 'Salir', 
       click: () => {
@@ -83,6 +153,7 @@ app.on('ready', () => {
   startServer();
   createWindow();
   createTray();
+  setupAutoUpdater();
 });
 
 app.on('window-all-closed', function () {
@@ -98,4 +169,4 @@ app.on('activate', function () {
   } else {
     mainWindow.show();
   }
-});;
+});

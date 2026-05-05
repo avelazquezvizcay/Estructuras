@@ -56,8 +56,10 @@
 
             <div class="product-card__cost">
               <span class="material-symbols-rounded">receipt_long</span>
-              {{ i18n.t('productos.cost') }}: {{ formatPrice(prod.costoTotalUsd) }}
-              · {{ prod.receta.length }} {{ i18n.t('productos.inputs') }}
+              @if (auth.canViewFinancials()) {
+                {{ i18n.t('productos.cost') }}: {{ formatPrice(prod.costoTotalUsd) }} · 
+              }
+              {{ prod.receta.length }} {{ i18n.t('productos.inputs') }}
             </div>
             <div class="product-card__actions">
               <button class="btn btn--secondary btn--sm" (click)="openProduccionModal(prod)">
@@ -98,7 +100,9 @@
           <tr>
             <th>{{ i18n.t('productos.product') || 'Producto' }}</th>
             <th>{{ i18n.t('productos.category') || 'Categoría' }}</th>
-            <th>{{ i18n.t('productos.cost') }}</th>
+            @if (auth.canViewFinancials()) {
+              <th>{{ i18n.t('productos.cost') }}</th>
+            }
             <th>{{ i18n.t('productos.retail') || 'Detalle' }}</th>
             <th>{{ i18n.t('productos.wholesale') || 'Mayor' }}</th>
             <th>{{ i18n.t('productos.grandWholesale') || 'Super Mayor' }}</th>
@@ -116,7 +120,9 @@
                 </div>
               </td>
               <td><span class="badge badge--primary">{{ prod.categoria }}</span></td>
-              <td><span class="currency-value currency-value--usd">{{ formatPrice(prod.costoTotalUsd) }}</span></td>
+              @if (auth.canViewFinancials()) {
+                <td><span class="currency-value currency-value--usd">{{ formatPrice(prod.costoTotalUsd) }}</span></td>
+              }
               @for (precio of prod.precios; track precio.nivel) {
                 <td><span class="currency-value">{{ formatPrice(precio.precioUsd) }}</span></td>
               }
@@ -181,8 +187,10 @@
           <tr>
             <th>Insumo</th>
             <th>Cantidad</th>
-            <th>Costo Unitario</th>
-            <th>Costo Línea</th>
+            @if (auth.canViewFinancials()) {
+              <th>Costo Ref.</th>
+              <th>Costo Línea</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -190,20 +198,24 @@
             <tr>
               <td class="ficha__insumo-name">{{ item.insumoNombre }}</td>
               <td>{{ item.cantidad.toString() }} {{ item.unidad }}</td>
-              <td>
-                @if (insumoService.getById(item.insumoId); as ins) {
-                  {{ formatPrice(ins.costoUnidadBaseUsd) }}/{{ ins.unidadBase }}
-                }
-              </td>
-              <td><strong class="currency-value currency-value--usd">{{ formatPrice(item.costoLineaUsd) }}</strong></td>
+              @if (auth.canViewFinancials()) {
+                <td>
+                  @if (insumoService.getById(item.insumoId); as ins) {
+                    {{ formatPrice(ins.costoUnidadBaseUsd) }}/{{ ins.unidadBase }}
+                  }
+                </td>
+                <td><strong class="currency-value currency-value--usd">{{ formatPrice(item.costoLineaUsd) }}</strong></td>
+              }
             </tr>
           }
         </tbody>
         <tfoot>
-          <tr>
-            <td colspan="3" style="text-align: right; font-weight: 700;">Costo Total:</td>
-            <td><strong class="currency-value currency-value--usd ficha__total">{{ formatPrice(prod.costoTotalUsd) }}</strong></td>
-          </tr>
+          @if (auth.canViewFinancials()) {
+            <tr>
+              <td colspan="3" style="text-align: right; font-weight: 700;">Costo Total:</td>
+              <td><strong class="currency-value currency-value--usd ficha__total">{{ formatPrice(prod.costoTotalUsd) }}</strong></td>
+            </tr>
+          }
         </tfoot>
       </table>
 
