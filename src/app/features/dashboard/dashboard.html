@@ -9,11 +9,11 @@
     <div class="page-header__actions">
       <button class="btn btn--secondary" (click)="exportarDashboard()">
         <span class="material-symbols-rounded">download</span>
-        Exportar
+        {{ i18n.t('dashboard.export') }}
       </button>
       <button class="btn btn--primary" routerLink="/productos">
         <span class="material-symbols-rounded">add</span>
-        Nuevo Prod. Elaborado
+        {{ i18n.t('dashboard.newProduct') }}
       </button>
     </div>
   </div>
@@ -50,7 +50,7 @@
   <section class="rates-bar" aria-label="Tasas de cambio actuales">
     <div class="rates-bar__title">
       <span class="material-symbols-rounded">currency_exchange</span>
-      Tasas Activas
+      {{ i18n.t('dashboard.activeRates') }}
     </div>
     <div class="rates-bar__items">
       @if (tasaService.tasaBcv(); as bcv) {
@@ -77,7 +77,7 @@
     </div>
     <div class="rates-bar__updated">
       <span class="material-symbols-rounded">schedule</span>
-      Actualizado hace 2 horas
+      {{ i18n.t('dashboard.updatedAgo') }}
     </div>
   </section>
   
@@ -85,8 +85,8 @@
   <div class="charts-grid animate-fade-in-up" style="animation-delay: 50ms">
     <section class="card chart-card">
       <div class="card__header">
-        <h2 class="card__title">Costo vs Precio de Venta</h2>
-        <p class="card__subtitle">Comparativa de los primeros 7 productos elaborados</p>
+        <h2 class="card__title">{{ i18n.t('dashboard.costVsSale') || 'Costo vs Precio de Venta' }}</h2>
+        <p class="card__subtitle">{{ i18n.t('dashboard.costVsSaleDesc') || 'Comparativa de los primeros 7 productos elaborados' }}</p>
       </div>
       <div class="card__content">
         <sec-chart [config]="chartCostos()"></sec-chart>
@@ -95,8 +95,8 @@
 
     <section class="card chart-card">
       <div class="card__header">
-        <h2 class="card__title">Mix de Categorías</h2>
-        <p class="card__subtitle">Distribución de prods. elaborados por rubro</p>
+        <h2 class="card__title">{{ i18n.t('dashboard.categoriesMix') || 'Mix de Categorías' }}</h2>
+        <p class="card__subtitle">{{ i18n.t('dashboard.categoriesMixDesc') || 'Distribución de prods. elaborados por rubro' }}</p>
       </div>
       <div class="card__content">
         <sec-chart [config]="chartCategorias()"></sec-chart>
@@ -113,8 +113,8 @@
         <div class="alert-card__header">
           <span class="material-symbols-rounded">warning</span>
           <div>
-            <h2 class="alert-card__title">Alertas de Inventario</h2>
-            <p class="alert-card__subtitle">Insumos por debajo del stock mínimo</p>
+            <h2 class="alert-card__title">{{ i18n.t('dashboard.inventoryAlerts') }}</h2>
+            <p class="alert-card__subtitle">{{ i18n.t('dashboard.lowStock') }}</p>
           </div>
         </div>
         <div class="alert-card__list">
@@ -133,8 +133,8 @@
     <!-- Advanced Analytics (New) -->
     <section class="card animate-fade-in-up">
       <div class="card__header">
-        <h2 class="card__title">Rentabilidad Radar</h2>
-        <p class="card__subtitle">Margen vs Costo (Top 5)</p>
+        <h2 class="card__title">{{ i18n.t('dashboard.profitabilityRadar') }}</h2>
+        <p class="card__subtitle">{{ i18n.t('dashboard.marginVsCost') }}</p>
       </div>
       <div class="card__content" style="height: 350px;">
         <sec-chart [config]="chartRentabilidad()"></sec-chart>
@@ -143,8 +143,8 @@
 
     <section class="card animate-fade-in-up">
       <div class="card__header">
-        <h2 class="card__title">Tendencia de Tasas</h2>
-        <p class="card__subtitle">Variación semanal BCV/Binance</p>
+        <h2 class="card__title">{{ i18n.t('dashboard.rateTrend') }}</h2>
+        <p class="card__subtitle">{{ i18n.t('dashboard.weeklyVar') }}</p>
       </div>
       <div class="card__content" style="height: 350px;">
         <sec-chart [config]="chartTendenciaTasas()"></sec-chart>
@@ -155,8 +155,8 @@
     <section class="card animate-fade-in-up" aria-label="Productos destacados">
       <div class="card__header" style="align-items: center; justify-content: space-between;">
         <div>
-          <h2 class="card__title">Top 5 Productos</h2>
-          <p class="card__subtitle">Rendimiento de tus productos</p>
+          <h2 class="card__title">{{ i18n.t('dashboard.top5Products') }}</h2>
+          <p class="card__subtitle">{{ i18n.t('dashboard.top5ProductsDesc') }}</p>
         </div>
         <div class="filter-group">
           <select class="form-select form-select--sm" 
@@ -193,10 +193,10 @@
     <section class="card animate-fade-in-up" style="animation-delay: 100ms" aria-label="Insumos más utilizados">
       <div class="card__header">
         <div>
-          <h2 class="card__title">Top 5 Insumos</h2>
-          <p class="card__subtitle">Insumos más utilizados en recetas</p>
+          <h2 class="card__title">{{ i18n.t('dashboard.top5Inputs') }}</h2>
+          <p class="card__subtitle">{{ i18n.t('dashboard.top5InputsDesc') }}</p>
         </div>
-        <button class="btn btn--ghost btn--sm">Ver todos</button>
+        <button class="btn btn--ghost btn--sm">{{ i18n.t('dashboard.viewAll') }}</button>
       </div>
 
       <div class="insumos-list">
@@ -219,8 +219,8 @@
     <section class="card card--full animate-fade-in-up" style="animation-delay: 200ms" aria-label="Actividad reciente">
       <div class="card__header">
         <div>
-          <h2 class="card__title">Actividad Reciente</h2>
-          <p class="card__subtitle">Últimos cambios en el sistema</p>
+          <h2 class="card__title">{{ i18n.t('dashboard.recentActivity') }}</h2>
+          <p class="card__subtitle">{{ i18n.t('dashboard.recentActivityDesc') }}</p>
         </div>
       </div>
 

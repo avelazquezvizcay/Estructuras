@@ -14,7 +14,7 @@ export interface SqliteResult {
 export class SqliteDatabaseService {
   private http = inject(HttpClient);
   // Usa window.location.hostname para que funcione desde el celular en la red local
-  private apiUrl = environment.apiUrl || `http://${window.location.hostname}:3000/api`;
+  private apiUrl = environment.apiUrl || `http://${window.location.hostname || '127.0.0.1'}:3000/api`;
 
   constructor() {}
 

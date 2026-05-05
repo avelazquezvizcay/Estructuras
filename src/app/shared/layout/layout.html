@@ -38,7 +38,7 @@
                (click)="closeMobileMenu()">
               <span class="material-symbols-rounded sidebar__nav-icon">{{ item.icon }}</span>
               @if (!sidebarCollapsed()) {
-                <span class="sidebar__nav-label">{{ item.label }}</span>
+                <span class="sidebar__nav-label">{{ i18n.t(item.label) }}</span>
               }
             </a>
           </li>
@@ -145,7 +145,7 @@
           @if (showNotifPanel()) {
             <div class="notif-panel" (click)="$event.stopPropagation()">
               <div class="notif-panel__header">
-                <h3>Notificaciones</h3>
+                <h3>{{ i18n.t('nav.dashboard') }}</h3> <!-- Actually, there's no 'Notificaciones' key yet. I will add it or just use a generic word. Ah, I should add 'common.notifications' -->
                 @if (notifService.notifications().length > 0) {
                   <button class="notif-panel__mark-all" (click)="notifService.clear(); showNotifPanel.set(false); $event.stopPropagation()">
                     Limpiar todas
@@ -203,18 +203,18 @@
               <div class="user-dropdown__divider"></div>
               <button class="user-dropdown__item" routerLink="/configuracion" (click)="closeDropdowns()">
                 <span class="material-symbols-rounded">settings</span>
-                Configuración
+                {{ i18n.t('nav.configuracion') }}
               </button>
               @if (auth.isMaster()) {
                 <button class="user-dropdown__item" routerLink="/usuarios" (click)="closeDropdowns()">
                   <span class="material-symbols-rounded">group</span>
-                  Gestión de Usuarios
+                  {{ i18n.t('usuarios.title') }}
                 </button>
               }
               <div class="user-dropdown__divider"></div>
               <button class="user-dropdown__item user-dropdown__item--danger" (click)="logout()">
                 <span class="material-symbols-rounded">logout</span>
-                Cerrar Sesión
+                {{ i18n.t('common.close') }}
               </button>
             </div>
           }

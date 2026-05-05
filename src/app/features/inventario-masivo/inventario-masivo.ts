@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InsumoService, InsumoView } from '../../core/services/insumo.service';
 import { ToastService } from '../../core/services/toast.service';
+import { I18nService } from '../../core/services/i18n.service';
 import Decimal from 'decimal.js';
 
 @Component({
@@ -16,6 +17,7 @@ import Decimal from 'decimal.js';
 export class InventarioMasivo implements OnInit {
   private readonly insumoService = inject(InsumoService);
   private readonly toast = inject(ToastService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly searchTerm = signal('');
   protected readonly categoriaFilter = signal('Todas');

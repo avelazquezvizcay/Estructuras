@@ -5,6 +5,7 @@ import { AuthService, AppUser, UserRole, ModuleConfig } from '../../core/service
 import { ToastService } from '../../core/services/toast.service';
 import { LicenseService, LicenseType } from '../../core/services/license.service';
 import { GeminiAiService } from '../../core/services/gemini-ai.service';
+import { I18nService } from '../../core/services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -20,6 +21,7 @@ export class Usuarios {
   private readonly toast = inject(ToastService);
   private readonly licenseService = inject(LicenseService);
   private readonly geminiAi = inject(GeminiAiService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly activeTab = signal<'users' | 'modules' | 'licensing'>('users');
   protected readonly showCreateModal = signal(false);

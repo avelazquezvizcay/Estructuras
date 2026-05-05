@@ -1,13 +1,13 @@
 <div class="usuarios-page">
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Gestión de Usuarios y Módulos</h1>
-      <p class="page-header__subtitle">Administra usuarios, roles y visibilidad de módulos</p>
+      <h1 class="page-header__title">{{ i18n.t('users.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('users.subtitle') }}</p>
     </div>
     <div class="page-header__actions">
       <button class="btn btn--primary" (click)="showCreateModal.set(true)">
         <span class="material-symbols-rounded">person_add</span>
-        Nuevo Usuario
+        {{ i18n.t('users.newUser') }}
       </button>
     </div>
   </div>
@@ -16,15 +16,15 @@
   <div class="tabs-bar">
     <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'users'" (click)="activeTab.set('users')">
       <span class="material-symbols-rounded">group</span>
-      Usuarios
+      {{ i18n.t('users.tabUsers') }}
     </button>
     <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'modules'" (click)="activeTab.set('modules')">
       <span class="material-symbols-rounded">apps</span>
-      Módulos
+      {{ i18n.t('users.tabModules') }}
     </button>
     <button class="tab-btn" [class.tab-btn--active]="activeTab() === 'licensing'" (click)="activeTab.set('licensing')">
       <span class="material-symbols-rounded">key</span>
-      Generador de Licencias
+      {{ i18n.t('users.tabLicensing') }}
     </button>
   </div>
 
@@ -58,9 +58,9 @@
                         [ngModel]="user.role" (ngModelChange)="changeRole(user, $event)"
                         [disabled]="user.role === 'master'">
                   <option value="master">Master</option>
-                  <option value="admin">Administrador</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="user">Usuario</option>
+                  <option value="admin">{{ i18n.t('users.roleAdmin') || 'Administrador' }}</option>
+                  <option value="supervisor">{{ i18n.t('users.roleSupervisor') || 'Supervisor' }}</option>
+                  <option value="user">{{ i18n.t('users.roleUser') || 'Usuario' }}</option>
                 </select>
               </td>
               <td class="cell-date">{{ formatDate(user.createdAt) }}</td>
@@ -133,9 +133,9 @@
       <div class="card licensing-card">
         <div class="licensing-card__header">
           <span class="material-symbols-rounded">shield</span>
-          <h2>Generar Nueva Licencia</h2>
+          <h2>{{ i18n.t('users.genLicenseTitle') || 'Generar Nueva Licencia' }}</h2>
         </div>
-        <p class="licensing-card__desc">Crea códigos de activación offline para nuevos clientes o instalaciones.</p>
+        <p class="licensing-card__desc">{{ i18n.t('users.genLicenseDesc') || 'Crea códigos de activación offline para nuevos clientes o instalaciones.' }}</p>
         
         <form class="licensing-form" (ngSubmit)="generateLicense()">
           <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -183,7 +183,7 @@
                          [checked]="genSelectedModules().includes(mod.id)"
                          (change)="toggleLicenseModule(mod.id)">
                   <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 13px; font-weight: 600;">{{ mod.name }}</span>
+                    <span style="font-size: 13px; font-weight: 600;">{{ mod.label }}</span>
                     <span style="font-size: 11px; color: var(--text-secondary);">{{ mod.description }}</span>
                   </div>
                 </label>
@@ -269,7 +269,7 @@
   <div class="modal-overlay" (click)="showCreateModal.set(false)">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-card__header">
-        <h2>Nuevo Usuario</h2>
+        <h2>{{ i18n.t('users.newUser') || 'Nuevo Usuario' }}</h2>
         <button class="btn btn--ghost btn--icon" (click)="showCreateModal.set(false)">
           <span class="material-symbols-rounded">close</span>
         </button>

@@ -62,7 +62,7 @@
             <div class="product-card__actions">
               <button class="btn btn--secondary btn--sm" (click)="openProduccionModal(prod)">
                 <span class="material-symbols-rounded">precision_manufacturing</span>
-                Producir
+                {{ i18n.t('productos.produce') || 'Producir' }}
               </button>
               <button class="btn btn--ghost btn--sm" (click)="openDetailModal(prod)">
                 <span class="material-symbols-rounded">visibility</span>
@@ -80,8 +80,8 @@
     } @else {
       <div class="empty-state card">
         <span class="material-symbols-rounded">bakery_dining</span>
-        <div class="empty-state__title">No hay productos elaborados</div>
-        <div class="empty-state__description">Crea tu primer producto elaborado y arma su receta de costos.</div>
+        <div class="empty-state__title">{{ i18n.t('productos.emptyTitle') || 'No hay productos elaborados' }}</div>
+        <div class="empty-state__description">{{ i18n.t('productos.emptyDesc') || 'Crea tu primer producto elaborado y arma su receta de costos.' }}</div>
         <button class="btn btn--primary" (click)="openCreateModal()">
           <span class="material-symbols-rounded">add</span>
           {{ i18n.t('productos.newProduct') }}
@@ -96,14 +96,14 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Producto</th>
-            <th>Categoría</th>
+            <th>{{ i18n.t('productos.product') || 'Producto' }}</th>
+            <th>{{ i18n.t('productos.category') || 'Categoría' }}</th>
             <th>{{ i18n.t('productos.cost') }}</th>
-            <th>Detalle</th>
-            <th>Mayor</th>
-            <th>Super Mayor</th>
-            <th>Insumos</th>
-            <th>Acciones</th>
+            <th>{{ i18n.t('productos.retail') || 'Detalle' }}</th>
+            <th>{{ i18n.t('productos.wholesale') || 'Mayor' }}</th>
+            <th>{{ i18n.t('productos.grandWholesale') || 'Super Mayor' }}</th>
+            <th>{{ i18n.t('productos.inputs') }}</th>
+            <th>{{ i18n.t('common.actions') || 'Acciones' }}</th>
           </tr>
         </thead>
         <tbody>
@@ -155,7 +155,7 @@
         <div>
           <span class="badge badge--primary">{{ prod.categoria }}</span>
           <p class="ficha__desc">{{ prod.descripcion }}</p>
-          <p class="ficha__rendimiento">Rendimiento: {{ prod.rendimiento }}</p>
+          <p class="ficha__rendimiento">{{ i18n.t('productos.yield') || 'Rendimiento' }}: {{ prod.rendimiento }}</p>
         </div>
         <button class="btn btn--secondary btn--sm" (click)="openShareModal(prod)">
           <span class="material-symbols-rounded">share</span>
@@ -175,7 +175,7 @@
       </div>
 
       <!-- Recipe breakdown -->
-      <h4 class="ficha__section-title">Receta / Estructura de Costos</h4>
+      <h4 class="ficha__section-title">{{ i18n.t('productos.recipeTitle') || 'Receta / Estructura de Costos' }}</h4>
       <table class="data-table ficha__recipe-table">
         <thead>
           <tr>

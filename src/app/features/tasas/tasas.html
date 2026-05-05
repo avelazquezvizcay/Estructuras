@@ -3,9 +3,9 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Tasas de Cambio</h1>
+      <h1 class="page-header__title">{{ i18n.t('tasas.title') }}</h1>
       <p class="page-header__subtitle">
-        Gestiona las tasas de cambio para conversión USD ↔ Bs
+        {{ i18n.t('tasas.subtitle') }}
         @if (tasaService.source(); as src) {
           <span class="source-tag">
             Fuente: <span class="badge" [class]="getSourceClass(src)">{{ getSourceLabel(src) }}</span>
@@ -16,11 +16,11 @@
     <div class="page-header__actions">
       <button class="btn btn--secondary" (click)="refreshRates()" [disabled]="tasaService.loading()">
         <span class="material-symbols-rounded" [class.spinning]="tasaService.loading()">refresh</span>
-        Actualizar
+        {{ i18n.t('tasas.update') }}
       </button>
       <button class="btn btn--primary" (click)="openManualModal()">
         <span class="material-symbols-rounded">edit</span>
-        Tasa Manual
+        {{ i18n.t('tasas.manual') }}
       </button>
     </div>
   </div>
@@ -42,10 +42,10 @@
             <span class="material-symbols-rounded">account_balance</span>
             BCV USD
           </div>
-          <span class="badge badge--success">Activa</span>
+          <span class="badge badge--success">{{ i18n.t('tasas.active') }}</span>
         </div>
         <div class="rate-card__value">{{ bcv.valor.toFixed(2) }}</div>
-        <div class="rate-card__unit">Bs por USD</div>
+        <div class="rate-card__unit">{{ i18n.t('tasas.bsPerUsd') }}</div>
         <div class="rate-card__footer">
           <span class="material-symbols-rounded">schedule</span>
           Actualizada: {{ bcv.fecha | date:'short' }}
@@ -60,10 +60,10 @@
             <span class="material-symbols-rounded">swap_horiz</span>
             Binance USDT
           </div>
-          <span class="badge badge--success">Activa</span>
+          <span class="badge badge--success">{{ i18n.t('tasas.active') }}</span>
         </div>
         <div class="rate-card__value">{{ binance.valor.toFixed(2) }}</div>
-        <div class="rate-card__unit">Bs por USDT</div>
+        <div class="rate-card__unit">{{ i18n.t('tasas.bsPerUsdt') }}</div>
         <div class="rate-card__footer">
           <span class="material-symbols-rounded">schedule</span>
           Actualizada: {{ binance.fecha | date:'short' }}
@@ -78,10 +78,10 @@
             <span class="material-symbols-rounded">euro</span>
             Euro BCV
           </div>
-          <span class="badge badge--success">Activa</span>
+          <span class="badge badge--success">{{ i18n.t('tasas.active') }}</span>
         </div>
         <div class="rate-card__value">{{ euro.valor.toFixed(2) }}</div>
-        <div class="rate-card__unit">Bs por EUR</div>
+        <div class="rate-card__unit">{{ i18n.t('tasas.bsPerEur') }}</div>
         <div class="rate-card__footer">
           <span class="material-symbols-rounded">schedule</span>
           Actualizada: {{ euro.fecha | date:'short' }}
@@ -94,8 +94,8 @@
   <section class="card" style="margin-top: var(--space-6)">
     <div class="card__header">
       <div>
-        <h2 class="card__title">Histórico de Tasas</h2>
-        <p class="card__subtitle">Registro automático y manual guardado en base de datos local</p>
+        <h2 class="card__title">{{ i18n.t('tasas.history') }}</h2>
+        <p class="card__subtitle">{{ i18n.t('tasas.historyDesc') }}</p>
       </div>
       <span class="badge badge--default">{{ tasaService.historial().length }} registros</span>
     </div>
@@ -149,7 +149,7 @@
   <div class="modal-overlay" (click)="showManualModal.set(false)">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-card__header">
-        <h2>Registrar Tasa Manual</h2>
+        <h2>{{ i18n.t('tasas.manual') }}</h2>
         <button class="btn btn--ghost btn--icon" (click)="showManualModal.set(false)">
           <span class="material-symbols-rounded">close</span>
         </button>

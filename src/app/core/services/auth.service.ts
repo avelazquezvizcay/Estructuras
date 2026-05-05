@@ -20,6 +20,7 @@ export interface AppUser {
 export interface ModuleConfig {
   id: string;
   label: string;
+  description: string;
   icon: string;
   route: string;
   enabled: boolean;
@@ -27,18 +28,18 @@ export interface ModuleConfig {
 }
 
 const DEFAULT_MODULES: ModuleConfig[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/dashboard', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
-  { id: 'insumos', label: 'Insumos', icon: 'inventory_2', route: '/insumos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
-  { id: 'productos', label: 'Productos Elaborados', icon: 'bakery_dining', route: '/productos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
-  { id: 'presupuestos', label: 'Presupuestos', icon: 'request_quote', route: '/presupuestos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'compras', label: 'Compras / Facturas', icon: 'receipt_long', route: '/compras', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'inventario_masivo', label: 'Inventario Masivo', icon: 'inventory', route: '/inventario-masivo', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'tasas', label: 'Tasas de Cambio', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
-  { id: 'reportes', label: 'Reportes', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'configuracion', label: 'Configuración', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master', 'admin'] },
-  { id: 'ia_facturas', label: 'IA: Extracción Facturas', icon: 'auto_awesome', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'ia_rif', label: 'IA: Extracción RIF', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'asistente_ia', label: 'IA: Chat Asistente', icon: 'psychology', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'dashboard', label: 'nav.dashboard', description: 'dashboard.subtitle', icon: 'dashboard', route: '/dashboard', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'insumos', label: 'nav.insumos', description: 'insumos.subtitle', icon: 'inventory_2', route: '/insumos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'productos', label: 'nav.productos', description: 'productos.subtitle', icon: 'bakery_dining', route: '/productos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'presupuestos', label: 'presupuestos.title', description: 'presupuestos.subtitle', icon: 'request_quote', route: '/presupuestos', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'compras', label: 'compras.title', description: 'compras.subtitle', icon: 'receipt_long', route: '/compras', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'inventario_masivo', label: 'inventario.title', description: 'inventario.subtitle', icon: 'inventory', route: '/inventario-masivo', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'tasas', label: 'nav.tasas', description: 'tasas.subtitle', icon: 'currency_exchange', route: '/tasas', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'reportes', label: 'nav.reportes', description: 'reportes.subtitle', icon: 'bar_chart', route: '/reportes', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'configuracion', label: 'nav.configuracion', description: 'config.subtitle', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master', 'admin'] },
+  { id: 'ia_facturas', label: 'ia.facturas', description: 'ia.facturasDesc', icon: 'auto_awesome', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'ia_rif', label: 'ia.rif', description: 'ia.rifDesc', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
+  { id: 'asistente_ia', label: 'ia.assistant', description: 'ia.assistantDesc', icon: 'psychology', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
 ];
 
 const DEFAULT_MASTER: AppUser & { username: string } = {

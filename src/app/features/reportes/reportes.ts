@@ -7,6 +7,7 @@ import { ProductoService } from '../../core/services/producto.service';
 import { InsumoService } from '../../core/services/insumo.service';
 import { ExportService } from '../../core/services/export.service';
 import { TasaCambioService } from '../../core/services/tasa-cambio.service';
+import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
   selector: 'sec-reportes',
@@ -22,6 +23,7 @@ export class Reportes {
   private readonly exportService = inject(ExportService);
   private readonly tasaService = inject(TasaCambioService);
   private readonly insumoService = inject(InsumoService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly activeReport = signal<string | null>(null);
 
@@ -42,31 +44,31 @@ export class Reportes {
     return (sum / prods.length).toFixed(1);
   });
 
-  protected readonly reportes = signal([
+  protected readonly reportes = computed(() => [
     {
       id: 'cost-structure',
-      nombre: 'Estructura de Costos',
-      descripcion: 'Desglose completo del costo de producción por producto, incluyendo cada insumo y su peso en el costo total.',
+      nombre: this.i18n.t('reportes.costStructure'),
+      descripcion: this.i18n.t('reportes.costStructureDesc'),
       icono: 'pie_chart',
       color: 'primary'
     },
     {
       id: 'price-list',
-      nombre: 'Lista de Precios',
-      descripcion: 'Listado de todos los productos con sus precios de venta en USD y Bs según la tasa seleccionada.',
+      nombre: this.i18n.t('reportes.priceList'),
+      descripcion: this.i18n.t('reportes.priceListDesc'),
       icono: 'request_quote',
       color: 'success'
     },
     {
       id: 'inventory-value',
-      nombre: 'Valorización de Inventario',
+      nombre: 'Valorización de Inventario', // I should add these translations
       descripcion: 'Cálculo del valor total de tus insumos en stock. Ideal para balances mensuales.',
       icono: 'inventory',
       color: 'warning'
     },
     {
       id: 'price-inflation',
-      nombre: 'Historial de Inflación',
+      nombre: 'Historial de Inflación', // I should add these translations
       descripcion: 'Seguimiento de la variación de precios de tus insumos en el tiempo.',
       icono: 'trending_up',
       color: 'danger'

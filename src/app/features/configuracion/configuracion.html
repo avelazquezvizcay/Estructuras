@@ -2,8 +2,8 @@
 
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Configuración</h1>
-      <p class="page-header__subtitle">Ajusta las preferencias del sistema</p>
+      <h1 class="page-header__title">{{ i18n.t('config.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('config.subtitle') }}</p>
     </div>
   </div>
 
@@ -83,8 +83,8 @@
           <span class="material-symbols-rounded">payments</span>
         </div>
         <div>
-          <h2 class="config-section__title">Moneda Principal</h2>
-          <p class="config-section__desc">Define la moneda base de visualización. Los costos de insumos pueden registrarse en USD o Bs.</p>
+          <h2 class="config-section__title">{{ i18n.t('config.currency') }}</h2>
+          <p class="config-section__desc">{{ i18n.t('config.currencyDesc') }}</p>
         </div>
       </div>
       <div class="config-section__body">
@@ -93,20 +93,20 @@
                   [class.toggle-option--active]="monedaPrincipal() === 'USD'"
                   (click)="setMoneda('USD')">
             <span class="toggle-option__symbol">$</span>
-            <span class="toggle-option__label">Dólar (USD)</span>
+            <span class="toggle-option__label">{{ i18n.t('config.dollarUsd') }}</span>
           </button>
           <button class="toggle-option"
                   [class.toggle-option--active]="monedaPrincipal() === 'VES'"
                   (click)="setMoneda('VES')">
             <span class="toggle-option__symbol">Bs</span>
-            <span class="toggle-option__label">Bolívar (VES)</span>
+            <span class="toggle-option__label">{{ i18n.t('config.bolivar') }}</span>
           </button>
         </div>
         <p class="config-hint">
           @if (monedaPrincipal() === 'VES') {
-            Los valores en Bs se convertirán a USD usando la tasa preferida para los cálculos internos.
+            {{ i18n.t('config.bsNote') }}
           } @else {
-            Los valores se mostrarán en USD como moneda principal, con equivalentes en Bs.
+            {{ i18n.t('config.usdNote') }}
           }
         </p>
       </div>
@@ -119,8 +119,8 @@
           <span class="material-symbols-rounded">currency_exchange</span>
         </div>
         <div>
-          <h2 class="config-section__title">Tasa de Cambio Preferida</h2>
-          <p class="config-section__desc">Tasa usada por defecto al convertir entre USD y Bs</p>
+          <h2 class="config-section__title">{{ i18n.t('config.preferredRate') }}</h2>
+          <p class="config-section__desc">{{ i18n.t('config.preferredRateDesc') }}</p>
         </div>
       </div>
       <div class="config-section__body">
@@ -133,7 +133,7 @@
             <div class="radio-card__dot"></div>
             <div class="radio-card__content">
               <span class="radio-card__name">BCV (USD)</span>
-              <span class="radio-card__desc">Tasa oficial del Banco Central de Venezuela</span>
+              <span class="radio-card__desc">{{ i18n.t('config.bcvDesc') }}</span>
             </div>
           </label>
           <label class="radio-card" [class.radio-card--active]="tasaPreferida() === 'BINANCE_USDT'">
@@ -144,7 +144,7 @@
             <div class="radio-card__dot"></div>
             <div class="radio-card__content">
               <span class="radio-card__name">Binance (USDT)</span>
-              <span class="radio-card__desc">Tasa P2P de Binance para USDT</span>
+              <span class="radio-card__desc">{{ i18n.t('config.binanceDesc') }}</span>
             </div>
           </label>
           <label class="radio-card" [class.radio-card--active]="tasaPreferida() === 'BCV_EUR'">
@@ -155,7 +155,7 @@
             <div class="radio-card__dot"></div>
             <div class="radio-card__content">
               <span class="radio-card__name">Euro BCV</span>
-              <span class="radio-card__desc">Tasa oficial del BCV para Euros</span>
+              <span class="radio-card__desc">{{ i18n.t('config.euroDesc') }}</span>
             </div>
           </label>
         </div>
@@ -204,8 +204,8 @@
           <span class="material-symbols-rounded">decimal_increase</span>
         </div>
         <div>
-          <h2 class="config-section__title">Decimales de Visualización</h2>
-          <p class="config-section__desc">Cantidad de decimales al mostrar valores monetarios</p>
+          <h2 class="config-section__title">{{ i18n.t('config.decimals') }}</h2>
+          <p class="config-section__desc">{{ i18n.t('config.decimalsDesc') }}</p>
         </div>
       </div>
       <div class="config-section__body">
@@ -231,8 +231,8 @@
           <span class="material-symbols-rounded">folder_managed</span>
         </div>
         <div>
-          <h2 class="config-section__title">Gestión de Archivos</h2>
-          <p class="config-section__desc">Exporta o importa toda la base de datos local</p>
+          <h2 class="config-section__title">{{ i18n.t('config.backup') }}</h2>
+          <p class="config-section__desc">{{ i18n.t('config.backupDesc') }}</p>
         </div>
       </div>
       <div class="config-section__body">

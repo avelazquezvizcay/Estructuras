@@ -36,6 +36,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dashboard.recentActivityDesc': 'Últimos cambios en el sistema',
     'dashboard.viewAll': 'Ver todos',
     'dashboard.recipes': 'recetas',
+    'dashboard.costVsSale': 'Costo vs Precio de Venta',
+    'dashboard.costVsSaleDesc': 'Comparativa de los primeros 7 productos elaborados',
+    'dashboard.categoriesMix': 'Mix de Categorías',
+    'dashboard.categoriesMixDesc': 'Distribución de prods. elaborados por rubro',
+    'dashboard.costUsd': 'Costo (USD)',
+    'dashboard.saleUsd': 'Venta (USD)',
+    'dashboard.marginPct': 'Margen (%)',
+    'dashboard.relativeCost': 'Costo Relativo (x10)',
+    'dashboard.profitability': 'Rentabilidad y Costo Relativo',
+    'dashboard.profitabilityDesc': 'Análisis de margen frente a costo de inversión',
 
     // ── Insumos ───
     'insumos.title': 'Insumos',
@@ -141,6 +151,45 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.updated': 'Actualizada',
     'common.share': 'Compartir',
     'common.profile': 'Perfil de usuario',
+
+    // ── Compras / Facturas ───
+    'compras.title': 'Compras y Facturas',
+    'compras.subtitle': 'Registra compras y actualiza inventario',
+    'compras.upload': 'Subir Factura',
+    'compras.processing': 'Procesando...',
+    
+    // ── Presupuestos ───
+    'presupuestos.title': 'Presupuestos',
+    'presupuestos.subtitle': 'Genera presupuestos y combos para clientes',
+    
+    // ── Usuarios ───
+    'usuarios.title': 'Gestión de Usuarios',
+    'usuarios.subtitle': 'Administra accesos y roles del sistema',
+    
+    // ── Inventario Masivo ───
+    'inventario.title': 'Inventario Masivo',
+    'inventario.subtitle': 'Actualiza el stock de todos tus insumos rápidamente',
+    
+    // ── Dashboard Extra ───
+    'dashboard.inventoryAlerts': 'Alertas de Inventario',
+    'dashboard.lowStock': 'Insumos por debajo del stock mínimo',
+    'dashboard.profitabilityRadar': 'Rentabilidad Radar',
+    'dashboard.marginVsCost': 'Margen vs Costo (Top 5)',
+    'dashboard.rateTrend': 'Tendencia de Tasas',
+    'dashboard.weeklyVar': 'Variación semanal BCV/Binance',
+    
+    // ── Tasas Extra ───
+    'tasas.manual': 'Tasa Manual',
+    'tasas.offlineCache': 'Sin conexión. Usando datos en caché.',
+    'tasas.update': 'Actualizar',
+
+    // ── IA / Asistente ───
+    'ia.facturas': 'IA: Extracción Facturas',
+    'ia.facturasDesc': 'Lectura inteligente de documentos.',
+    'ia.rif': 'IA: Extracción RIF',
+    'ia.rifDesc': 'Validación de datos fiscales.',
+    'ia.assistant': 'IA: Chat Asistente',
+    'ia.assistantDesc': 'Consultas inteligentes sobre tu negocio.',
   },
 
   en: {
@@ -176,6 +225,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dashboard.recentActivityDesc': 'Latest system changes',
     'dashboard.viewAll': 'View all',
     'dashboard.recipes': 'recipes',
+    'dashboard.costVsSale': 'Cost vs Selling Price',
+    'dashboard.costVsSaleDesc': 'Comparison of the first 7 manufactured products',
+    'dashboard.categoriesMix': 'Categories Mix',
+    'dashboard.categoriesMixDesc': 'Distribution of manufactured products by category',
+    'dashboard.costUsd': 'Cost (USD)',
+    'dashboard.saleUsd': 'Sale (USD)',
+    'dashboard.marginPct': 'Margin (%)',
+    'dashboard.relativeCost': 'Relative Cost (x10)',
+    'dashboard.profitability': 'Profitability & Relative Cost',
+    'dashboard.profitabilityDesc': 'Margin analysis vs investment cost',
 
     // ── Insumos ───
     'insumos.title': 'Ingredients',
@@ -281,6 +340,45 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.updated': 'Updated',
     'common.share': 'Share',
     'common.profile': 'User profile',
+
+    // ── Compras / Facturas ───
+    'compras.title': 'Purchases & Invoices',
+    'compras.subtitle': 'Log purchases and update inventory',
+    'compras.upload': 'Upload Invoice',
+    'compras.processing': 'Processing...',
+    
+    // ── Presupuestos ───
+    'presupuestos.title': 'Budgets',
+    'presupuestos.subtitle': 'Generate quotes and combos for clients',
+    
+    // ── Usuarios ───
+    'usuarios.title': 'User Management',
+    'usuarios.subtitle': 'Manage system access and roles',
+    
+    // ── Inventario Masivo ───
+    'inventario.title': 'Mass Inventory',
+    'inventario.subtitle': 'Quickly update stock for all ingredients',
+    
+    // ── Dashboard Extra ───
+    'dashboard.inventoryAlerts': 'Inventory Alerts',
+    'dashboard.lowStock': 'Ingredients below minimum stock',
+    'dashboard.profitabilityRadar': 'Profitability Radar',
+    'dashboard.marginVsCost': 'Margin vs Cost (Top 5)',
+    'dashboard.rateTrend': 'Rate Trend',
+    'dashboard.weeklyVar': 'Weekly variation BCV/Binance',
+    
+    // ── Tasas Extra ───
+    'tasas.manual': 'Manual Rate',
+    'tasas.offlineCache': 'Offline. Using cached data.',
+    'tasas.update': 'Refresh',
+
+    // ── IA / Asistente ───
+    'ia.facturas': 'AI: Invoice Extraction',
+    'ia.facturasDesc': 'Smart document reading.',
+    'ia.rif': 'AI: RIF Extraction',
+    'ia.rifDesc': 'Fiscal data validation.',
+    'ia.assistant': 'AI: Chat Assistant',
+    'ia.assistantDesc': 'Smart queries about your business.',
   }
 };
 

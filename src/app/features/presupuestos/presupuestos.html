@@ -1,8 +1,8 @@
 <div class="presupuestos-page">
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Simulador de Producción y Presupuestos</h1>
-      <p class="page-header__subtitle">Calcula materiales necesarios y costos de inversión antes de producir.</p>
+      <h1 class="page-header__title">{{ i18n.t('presupuestos.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('presupuestos.subtitle') }}</p>
     </div>
     <div class="page-header__actions">
       <button class="btn btn--secondary" (click)="limpiar()">
@@ -20,8 +20,8 @@
     <!-- Main Form: Configuración del Pedido -->
     <div class="presupuesto-main card">
       <div class="card__header">
-        <h2 class="card__title">Configuración del Pedido (Simulación)</h2>
-        <p class="card__subtitle">Selecciona los productos y las cantidades que planeas producir.</p>
+        <h2 class="card__title">{{ i18n.t('presupuestos.config') }}</h2>
+        <p class="card__subtitle">{{ i18n.t('presupuestos.configDesc') }}</p>
       </div>
 
       <div class="builder-header" style="margin-top: 20px;">

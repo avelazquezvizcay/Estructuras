@@ -10,6 +10,7 @@ import { GeminiAiService } from '../../core/services/gemini-ai.service';
 import { LicenseService } from '../../core/services/license.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AuthService } from '../../core/services/auth.service';
+import { I18nService } from '../../core/services/i18n.service';
 import { createWorker } from 'tesseract.js';
 import { environment } from '../../../environments/environment';
 
@@ -29,6 +30,7 @@ export class Configuracion {
   protected readonly licenseService = inject(LicenseService);
   protected readonly settingsService = inject(SettingsService);
   protected readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18nService);
   protected readonly isScanningRif = signal(false);
   protected readonly nuevoMetodo = signal('');
 

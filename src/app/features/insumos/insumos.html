@@ -48,8 +48,8 @@
             <th>{{ i18n.t('insumos.col.presentation') }}</th>
             <th>{{ i18n.t('insumos.col.costPresentation') }}</th>
             <th>{{ i18n.t('insumos.col.baseCost') }}</th>
-            <th>Stock Actual</th>
-            <th>Mínimo</th>
+            <th>{{ i18n.t('insumos.col.stock') || 'Stock Actual' }}</th>
+            <th>{{ i18n.t('insumos.col.min') || 'Mínimo' }}</th>
             <th>{{ i18n.t('insumos.col.supplier') }}</th>
             <th>{{ i18n.t('insumos.col.updated') }}</th>
             <th>{{ i18n.t('insumos.col.actions') }}</th>
@@ -103,8 +103,8 @@
     } @else {
       <div class="empty-state">
         <span class="material-symbols-rounded">inventory_2</span>
-        <div class="empty-state__title">No hay insumos</div>
-        <div class="empty-state__description">Agrega tu primer insumo para comenzar a calcular costos de producción.</div>
+        <div class="empty-state__title">{{ i18n.t('insumos.emptyTitle') || 'No hay insumos' }}</div>
+        <div class="empty-state__description">{{ i18n.t('insumos.emptyDesc') || 'Agrega tu primer insumo para comenzar a calcular costos de producción.' }}</div>
         <button class="btn btn--primary" (click)="openCreateModal()">
           <span class="material-symbols-rounded">add</span>
           {{ i18n.t('insumos.newInput') }}
@@ -129,7 +129,7 @@
 
       <div class="form-row">
         <div class="form-group form-group--full">
-          <label for="nombre">Nombre del insumo *</label>
+          <label for="nombre">{{ i18n.t('common.name') || 'Nombre' }} *</label>
           <input id="nombre" type="text" placeholder="Ej. Harina de Trigo"
                  [ngModel]="formNombre()" (ngModelChange)="formNombre.set($event)" name="nombre" required>
         </div>

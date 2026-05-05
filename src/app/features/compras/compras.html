@@ -1,13 +1,13 @@
 <div class="compras-page">
   <div class="page-header">
     <div class="page-header__info">
-      <h1 class="page-header__title">Compras y Facturas</h1>
-      <p class="page-header__subtitle">Registra tus compras para actualizar stock y precios automáticamente.</p>
+      <h1 class="page-header__title">{{ i18n.t('compras.title') }}</h1>
+      <p class="page-header__subtitle">{{ i18n.t('compras.subtitle') }}</p>
     </div>
     <div class="page-header__actions">
       <button class="btn btn--primary" (click)="openNuevaCompra()">
         <span class="material-symbols-rounded">add_shopping_cart</span>
-        Cargar Factura
+        {{ i18n.t('compras.loadInvoice') }}
       </button>
     </div>
   </div>
@@ -66,8 +66,8 @@
     @if (compraService.compras().length === 0) {
       <div class="empty-state">
         <span class="material-symbols-rounded">receipt_long</span>
-        <h3>No hay compras registradas</h3>
-        <p>Tus facturas aparecerán aquí una vez que las cargues.</p>
+        <h3>{{ i18n.t('compras.emptyTitle') }}</h3>
+        <p>{{ i18n.t('compras.emptyDesc') }}</p>
       </div>
     }
   </div>

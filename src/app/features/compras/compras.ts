@@ -12,6 +12,7 @@ import { GroqAiService } from '../../core/services/groq-ai.service';
 import { GeminiAiService } from '../../core/services/gemini-ai.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AuthService } from '../../core/services/auth.service';
+import { I18nService } from '../../core/services/i18n.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -31,6 +32,7 @@ export class Compras implements OnInit {
   protected readonly settingsService = inject(SettingsService);
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  protected readonly i18n = inject(I18nService);
 
   // UI State
   protected readonly showModal = signal(false);

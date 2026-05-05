@@ -2,6 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const sqlite = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
+
+// Log errors to a file for debugging in production
+const logPath = path.join(process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + '/.local/share'), 'sec-server-log.txt');
+function log(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  fs.appendFileSync(logPath, line);
+  console.log(msg);
+}
+
+log('Server module loading...');
 let electronApp;
 try {
   const electron = require('electron');
@@ -28,7 +39,7 @@ const dbPath = !isDev && electronApp && electronApp.getPath
   : path.join(__dirname, '..', 'database.sqlite');
 
 const db = new sqlite(dbPath);
-console.log('Connected to SQLite database at:', dbPath);
+log('Connected to SQLite database at: ' + dbPath);
 
 // Initialize schema
 db.exec(`
@@ -149,7 +160,7 @@ app.post('/api/db/all', (req, res) => {
     const result = db.prepare(sql).all(...params);
     res.json(result);
   } catch (err) {
-    console.error('SQL Error (all):', err);
+    log('SQL Error (all): ' + err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -204,7 +215,7 @@ let serverInstance = null;
 function startServer() {
   if (!serverInstance) {
     serverInstance = app.listen(port, '0.0.0.0', () => {
-      console.log(`SEC Embedded Backend running on port ${port}`);
+      log(`SEC Embedded Backend running on port ${port}`);
     });
   }
 }

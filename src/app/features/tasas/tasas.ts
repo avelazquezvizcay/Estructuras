@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { TasaCambioService } from '../../core/services/tasa-cambio.service';
+import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
   selector: 'sec-tasas',
@@ -12,6 +13,7 @@ import { TasaCambioService } from '../../core/services/tasa-cambio.service';
 })
 export class Tasas {
   protected readonly tasaService = inject(TasaCambioService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly showManualModal = signal(false);
   protected readonly manualBcv = signal<number>(0);

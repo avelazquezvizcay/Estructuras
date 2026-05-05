@@ -2,22 +2,22 @@
   <!-- Header -->
   <header class="page-header">
     <div class="page-header__info">
-      <h1>Inventario Masivo</h1>
-      <p>Gestión rápida de stock para todos tus insumos.</p>
+      <h1>{{ i18n.t('inventario.title') }}</h1>
+      <p>{{ i18n.t('inventario.subtitle') }}</p>
     </div>
     
     <div class="page-header__actions">
       @if (hasChanges()) {
         <div class="changes-badge animate-fade-in">
           <span class="material-symbols-rounded">edit_document</span>
-          {{ changesCount() }} cambios
+          {{ changesCount() }} {{ i18n.t('inventario.changes') || 'cambios' }}
         </div>
         <button class="btn btn--secondary" (click)="cancelChanges()">
-          Cancelar
+          {{ i18n.t('inventario.cancel') || 'Cancelar' }}
         </button>
         <button class="btn btn--primary" (click)="saveChanges()">
           <span class="material-symbols-rounded">save</span>
-          Guardar Cambios
+          {{ i18n.t('inventario.saveChanges') || 'Guardar Cambios' }}
         </button>
       }
     </div>
@@ -53,12 +53,12 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Insumo / Proveedor</th>
-            <th>Categoría</th>
-            <th class="text-center">U.M.</th>
-            <th class="text-right">Stock Actual</th>
-            <th class="text-center" style="width: 140px;">Nuevo Stock</th>
-            <th class="text-right">Ajuste</th>
+            <th>{{ i18n.t('inventario.colInsumo') || 'Insumo / Proveedor' }}</th>
+            <th>{{ i18n.t('inventario.colCategory') || 'Categoría' }}</th>
+            <th class="text-center">{{ i18n.t('inventario.colUnit') || 'U.M.' }}</th>
+            <th class="text-right">{{ i18n.t('inventario.colStock') || 'Stock Actual' }}</th>
+            <th class="text-center" style="width: 140px;">{{ i18n.t('inventario.colNewStock') || 'Nuevo Stock' }}</th>
+            <th class="text-right">{{ i18n.t('inventario.colAdjustment') || 'Ajuste' }}</th>
           </tr>
         </thead>
         <tbody>

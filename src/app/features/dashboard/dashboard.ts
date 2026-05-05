@@ -6,6 +6,7 @@ import { InsumoService } from '../../core/services/insumo.service';
 import { ProductoService } from '../../core/services/producto.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { DashboardKpi } from '../../core/models/domain.models';
+import { I18nService } from '../../core/services/i18n.service';
 
 import { RouterLink } from '@angular/router';
 import { ChartComponent } from '../../shared/components/chart/chart';
@@ -24,10 +25,11 @@ export class Dashboard {
   protected readonly insumoService = inject(InsumoService);
   protected readonly productoService = inject(ProductoService);
   protected readonly notifService = inject(NotificationService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly kpis = computed<DashboardKpi[]>(() => [
     {
-      label: 'Productos Registrados',
+      label: this.i18n.t('dashboard.registeredProducts'),
       value: this.productoService.count().toString(),
       subvalue: 'Activos en catálogo',
       icon: 'bakery_dining',
@@ -36,27 +38,27 @@ export class Dashboard {
       color: 'primary'
     },
     {
-      label: 'Insumos Activos',
+      label: this.i18n.t('dashboard.activeInputs'),
       value: this.insumoService.count().toString(),
-      subvalue: `${this.insumoService.categorias().length - 1} categorías`,
+      subvalue: `${this.insumoService.categorias().length - 1} ${this.i18n.t('dashboard.categories')}`,
       icon: 'inventory_2',
       trend: 'up',
       trendValue: '',
       color: 'success'
     },
     {
-      label: 'Costo Promedio',
+      label: this.i18n.t('dashboard.avgCost'),
       value: `$${this.productoService.promedioCosto().toFixed(2)}`,
-      subvalue: 'por producto',
+      subvalue: this.i18n.t('dashboard.perProduct'),
       icon: 'trending_up',
       trend: 'neutral',
       trendValue: '',
       color: 'warning'
     },
     {
-      label: 'Margen Promedio',
+      label: this.i18n.t('dashboard.avgMargin'),
       value: `${this.productoService.promedioMargen().toFixed(0)}%`,
-      subvalue: 'de utilidad',
+      subvalue: this.i18n.t('dashboard.ofProfit'),
       icon: 'percent',
       trend: 'neutral',
       trendValue: '',
@@ -88,14 +90,14 @@ export class Dashboard {
         labels: prods.map(p => p.nombre.length > 15 ? p.nombre.substring(0, 12) + '...' : p.nombre),
         datasets: [
           {
-            label: 'Costo (USD)',
+            label: this.i18n.t('dashboard.costUsd') || 'Costo (USD)',
             data: prods.map(p => p.costoTotalUsd.toNumber()),
             backgroundColor: 'rgba(99, 102, 241, 0.5)',
             borderColor: '#6366f1',
             borderWidth: 1
           },
           {
-            label: 'Venta (USD)',
+            label: this.i18n.t('dashboard.saleUsd') || 'Venta (USD)',
             data: prods.map(p => parseFloat(p.precios[0]?.precioUsd || '0')),
             backgroundColor: 'rgba(34, 197, 94, 0.5)',
             borderColor: '#22c55e',
@@ -151,13 +153,13 @@ export class Dashboard {
         labels: prods.map(p => p.nombre),
         datasets: [
           {
-            label: 'Margen (%)',
+            label: this.i18n.t('dashboard.marginPct') || 'Margen (%)',
             data: prods.map(p => parseFloat(p.precios[0]?.margenPct || '0')),
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.2)',
           },
           {
-            label: 'Costo Relativo (x10)',
+            label: this.i18n.t('dashboard.relativeCost') || 'Costo Relativo (x10)',
             data: prods.map(p => p.costoTotalUsd.toNumber() * 10),
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.2)',

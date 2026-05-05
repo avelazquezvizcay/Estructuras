@@ -43,5 +43,23 @@ npm run build
 ## 6. 📝 Documentación Adicional
 - **[DOCUMENTACION.md](./DOCUMENTACION.md):** Arquitectura técnica basada en Electron + SQLite.
 
+## 7. 🔐 Credenciales de Acceso
+
+### Código de Activación (Pantalla inicial)
+| Campo | Valor |
+|-------|-------|
+| **Empresa** | `MASTER` |
+| **Código** | `M@zinkaiser` |
+
+> Esto otorga licencia **FULL permanente** con acceso a todos los módulos.
+
+### Login por Defecto (después de activar)
+| Campo | Valor |
+|-------|-------|
+| **Usuario** | `admin` |
+| **Contraseña** | `admin123` |
+
+> Se recomienda cambiar la contraseña después del primer ingreso desde el módulo de **Usuarios**.
+
 ---
 *Fin de Fase 1. Sistema listo para Producción.*

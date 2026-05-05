@@ -22,6 +22,12 @@ export class TasaCambioService {
   private readonly notifService = inject(NotificationService);
   private readonly sqlite = inject(SqliteDatabaseService);
 
+  // En Electron (file://) no hay proxy de Angular, usamos URLs directas
+  private readonly isElectron = window.location.protocol === 'file:';
+  private urlBcv = this.isElectron ? 'https://www.bcv.org.ve/' : '/api/bcv/';
+  private urlDolar = this.isElectron ? 'https://ve.dolarapi.com/v1/dolares' : '/api/dolar';
+  private urlEuro = this.isElectron ? 'https://ve.dolarapi.com/v1/euros' : '/api/euro';
+
   private readonly _tasas = signal<TasaCambio[]>([]);
   private readonly _tasaPreferida = signal<TipoTasa>('BCV_USD');
   private readonly _loading = signal(false);
@@ -108,7 +114,7 @@ export class TasaCambioService {
 
   // ─── Fuente 1: BCV Scraping Oficial (Prioridad) ─────────────
   private async fetchBcvScraping(): Promise<void> {
-    const res = await fetch('/api/bcv/', {
+    const res = await fetch(this.urlBcv, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36' }
     });
     if (!res.ok) throw new Error(`BCV fetch error: ${res.status}`);
@@ -127,7 +133,7 @@ export class TasaCambioService {
     // For Binance/paralelo, try DolarAPI as complement
     let binance = bcv * 1.03; // Default estimate
     try {
-      const dolarRes = await fetch('/api/dolar');
+      const dolarRes = await fetch(this.urlDolar);
       if (dolarRes.ok) {
         const usdData = await dolarRes.json();
         const paraleloEntry = usdData.find((f: any) => f.fuente === 'paralelo' || f.entidad === 'Paralelo');
@@ -143,8 +149,8 @@ export class TasaCambioService {
   // ─── Fuente 2: DolarAPI (datos oficiales agregados) ─────────
   private async fetchFromDolarApi(): Promise<void> {
     const [usdRes, eurRes] = await Promise.all([
-      fetch('/api/dolar'),
-      fetch('/api/euro')
+      fetch(this.urlDolar),
+      fetch(this.urlEuro)
     ]);
 
     if (!usdRes.ok || !eurRes.ok) throw new Error('DolarAPI error');
