@@ -153,6 +153,53 @@ export class GeminiAiService {
     }
   }
 
+  /**
+   * Genera asesoría financiera basada en los datos del negocio
+   */
+  public async generateFinancialAdvice(contextData: string): Promise<string> {
+    const apiKey = environment.geminiApiKey;
+    if (!apiKey) return 'Error: API Key de Gemini no configurada en el entorno.';
+
+    this.isLoading.set(true);
+
+    const prompt = `Eres un CFO (Director Financiero) experto asesorando a una pequeña/mediana empresa. 
+    A continuación, te proporcionaré los datos actuales de su estructura de costos, insumos y productos.
+    
+    DATOS DEL NEGOCIO:
+    ${contextData}
+
+    INSTRUCCIONES:
+    1. Analiza la rentabilidad de los productos. Identifica cuáles tienen márgenes de ganancia peligrosamente bajos o altos.
+    2. Revisa el stock de insumos y advierte sobre posibles quiebres de inventario o costos excesivos.
+    3. Dame 3 recomendaciones estratégicas accionables y claras para mejorar la rentabilidad del negocio.
+    4. Usa un tono profesional, directo y alentador.
+    5. Formatea tu respuesta en Markdown usando negritas, listas y saltos de línea para que sea fácil de leer en la interfaz de usuario.
+    6. Trata de ser conciso (no más de 400 palabras).`;
+
+    try {
+      const response = await fetch(this.API_URL, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        })
+      });
+
+      if (!response.ok) throw new Error('Error en Gemini API');
+      const result = await response.json();
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar la asesoría en este momento.';
+    } catch (error) {
+      console.error('Gemini Financial Advice Error:', error);
+      return 'Ocurrió un error al intentar comunicar con el servicio de Inteligencia Artificial. Por favor verifica tu conexión o API Key.';
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
   private extractMimeType(base64: string): string | null {
     const match = base64.match(/^data:(.*);base64,/);
     return match ? match[1] : null;

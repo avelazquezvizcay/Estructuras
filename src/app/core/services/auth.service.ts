@@ -39,7 +39,7 @@ const DEFAULT_MODULES: ModuleConfig[] = [
   { id: 'configuracion', label: 'nav.configuracion', description: 'config.subtitle', icon: 'settings', route: '/configuracion', enabled: true, rolesAllowed: ['master', 'admin'] },
   { id: 'ia_facturas', label: 'ia.facturas', description: 'ia.facturasDesc', icon: 'auto_awesome', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
   { id: 'ia_rif', label: 'ia.rif', description: 'ia.rifDesc', icon: 'smart_toy', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor'] },
-  { id: 'asistente_ia', label: 'ia.assistant', description: 'ia.assistantDesc', icon: 'psychology', route: '', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
+  { id: 'asistente_ia', label: 'ia.assistant', description: 'ia.assistantDesc', icon: 'psychology', route: '/asesor-ia', enabled: true, rolesAllowed: ['master', 'admin', 'supervisor', 'user'] },
 ];
 
 const DEFAULT_MASTER: AppUser & { username: string } = {

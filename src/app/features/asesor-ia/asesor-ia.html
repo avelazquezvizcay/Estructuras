@@ -1,0 +1,58 @@
+<div class="asesor-page animate-fade-in-up">
+  <div class="page-header">
+    <div class="page-header__info">
+      <h1 class="page-header__title">Asesor Financiero IA</h1>
+      <p class="page-header__subtitle">Análisis inteligente de tu estructura de costos e inventario</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--primary" (click)="analyzeBusiness()" [disabled]="aiService.isLoading()">
+        @if (aiService.isLoading()) {
+          <span class="loader-spinner"></span> Analizando...
+        } @else {
+          <span class="material-symbols-rounded">psychology</span>
+          Generar Análisis
+        }
+      </button>
+    </div>
+  </div>
+
+  <div class="asesor-content">
+    @if (advice()) {
+      <div class="card advice-card">
+        <div class="card__header">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div class="ai-avatar">
+              <span class="material-symbols-rounded">robot_2</span>
+            </div>
+            <div>
+              <h2 class="card__title">Reporte del CFO Virtual</h2>
+              <p class="card__subtitle">Basado en tus datos actuales</p>
+            </div>
+          </div>
+        </div>
+        <div class="card__content">
+          <div class="markdown-content" [innerHTML]="formattedAdvice()"></div>
+        </div>
+      </div>
+    } @else {
+      <div class="empty-state card">
+        <div class="ai-avatar ai-avatar--large">
+          <span class="material-symbols-rounded">robot_2</span>
+        </div>
+        <div class="empty-state__title">Tu CFO Virtual está listo</div>
+        <div class="empty-state__description" style="max-width: 500px; margin: 0 auto;">
+          Haz clic en "Generar Análisis" para que la Inteligencia Artificial evalúe tus productos, 
+          identifique cuáles tienen un margen de ganancia peligroso y te alerte sobre tu inventario.
+        </div>
+        <button class="btn btn--primary" style="margin-top: 1.5rem;" (click)="analyzeBusiness()" [disabled]="aiService.isLoading()">
+          @if (aiService.isLoading()) {
+            <span class="loader-spinner"></span>
+          } @else {
+            <span class="material-symbols-rounded">auto_awesome</span>
+            Comenzar Análisis
+          }
+        </button>
+      </div>
+    }
+  </div>
+</div>

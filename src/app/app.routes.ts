@@ -61,6 +61,11 @@ export const routes: Routes = [
         title: 'Reportes — SEC'
       },
       {
+        path: 'asesor-ia',
+        loadComponent: () => import('./features/asesor-ia/asesor-ia').then(m => m.AsesorIa),
+        title: 'Asesor IA — SEC'
+      },
+      {
         path: 'configuracion',
         loadComponent: () => import('./features/configuracion/configuracion').then(m => m.Configuracion),
         title: 'Configuración — SEC'
