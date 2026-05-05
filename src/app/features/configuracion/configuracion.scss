@@ -243,6 +243,51 @@
   background: var(--accent-purple-subtle); color: var(--accent-purple);
 }
 
+// Toggle Switch
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg-tertiary);
+    border-radius: 26px;
+    transition: background 0.3s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+  }
+
+  input:checked + &__slider {
+    background: var(--accent-primary);
+  }
+
+  input:checked + &__slider::before {
+    transform: translateX(22px);
+  }
+}
+
 @media (max-width: 1024px) {
   .config-grid { grid-template-columns: 1fr; }
 }
@@ -252,3 +297,4 @@
   .backup-actions { flex-direction: column; }
   .email-backup-row { flex-direction: column; align-items: stretch; }
 }
+

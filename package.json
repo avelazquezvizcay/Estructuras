@@ -20,6 +20,8 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "adm-zip": "^0.5.17",
+    "archiver": "^7.0.1",
     "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
     "cors": "^2.8.6",
@@ -35,11 +37,11 @@
     "@angular/build": "^21.2.8",
     "@angular/cli": "^21.2.8",
     "@angular/compiler-cli": "^21.2.0",
+    "@electron/rebuild": "^3.7.1",
     "concurrently": "^9.2.1",
     "electron": "^33.0.0",
     "electron-builder": "^26.8.1",
     "electron-is-dev": "^3.0.1",
-    "@electron/rebuild": "^3.7.1",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },
@@ -58,6 +60,12 @@
     "win": {
       "target": "nsis",
       "icon": "public/sec_icon.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "avelazquezvizcay",
+      "repo": "Estructuras",
+      "private": true
     }
   }
 }

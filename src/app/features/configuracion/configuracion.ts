@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal, inject, ViewChild, ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TipoTasa } from '../../core/models/domain.models';
@@ -14,6 +14,12 @@ import { I18nService } from '../../core/services/i18n.service';
 import { createWorker } from 'tesseract.js';
 import { environment } from '../../../environments/environment';
 
+interface BackupEntry {
+  name: string;
+  size: number;
+  date: string;
+}
+
 @Component({
   selector: 'sec-configuracion',
   imports: [CommonModule, FormsModule],
@@ -21,7 +27,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './configuracion.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Configuracion {
+export class Configuracion implements OnInit {
   private readonly tasaService = inject(TasaCambioService);
   protected readonly backupService = inject(BackupService);
   private readonly toast = inject(ToastService);
@@ -46,7 +52,21 @@ export class Configuracion {
   protected readonly empresaDireccion = signal(localStorage.getItem('empresaDireccion') || '');
   protected readonly empresaLogo = signal(localStorage.getItem('empresaLogo') || '');
 
+  // Backup ZIP state
+  protected readonly isCreatingBackup = signal(false);
+  protected readonly backupList = signal<BackupEntry[]>([]);
+  protected readonly backupEnabled = signal(false);
+  protected readonly backupIntervalHours = signal(24);
+  protected readonly backupMaxFiles = signal(10);
+
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
+  private readonly API = 'http://localhost:3000';
+
+  ngOnInit(): void {
+    this.loadBackupList();
+    this.loadScheduleSettings();
+  }
 
   setMoneda(moneda: 'USD' | 'VES'): void {
     this.monedaPrincipal.set(moneda);
@@ -116,6 +136,117 @@ export class Configuracion {
     this.settingsService.removeMethod(metodo);
     this.toast.info('Método de pago eliminado.');
   }
+
+  // ═══ ZIP Backup Methods ═══
+
+  async createZipBackup(): Promise<void> {
+    this.isCreatingBackup.set(true);
+    try {
+      const res = await fetch(`${this.API}/api/backup/create`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        this.toast.success('Respaldo ZIP creado exitosamente.');
+        this.loadBackupList();
+      } else {
+        this.toast.error('Error al crear respaldo: ' + (data.error || 'Unknown'));
+      }
+    } catch (e: any) {
+      this.toast.error('Error de conexión al crear respaldo.');
+    } finally {
+      this.isCreatingBackup.set(false);
+    }
+  }
+
+  async loadBackupList(): Promise<void> {
+    try {
+      const res = await fetch(`${this.API}/api/backup/list`);
+      const data = await res.json();
+      this.backupList.set(data.backups || []);
+    } catch {
+      // Server might not be running in dev
+    }
+  }
+
+  async loadScheduleSettings(): Promise<void> {
+    try {
+      const res = await fetch(`${this.API}/api/backup/schedule`);
+      const data = await res.json();
+      this.backupEnabled.set(data.enabled || false);
+      this.backupIntervalHours.set(data.intervalHours || 24);
+      this.backupMaxFiles.set(data.maxBackups || 10);
+    } catch {
+      // Server might not be running
+    }
+  }
+
+  async toggleScheduledBackup(event: Event): Promise<void> {
+    const enabled = (event.target as HTMLInputElement).checked;
+    this.backupEnabled.set(enabled);
+    await this.saveScheduleSettings();
+  }
+
+  setBackupInterval(hours: number): void {
+    this.backupIntervalHours.set(Number(hours));
+  }
+
+  setBackupMax(max: number): void {
+    this.backupMaxFiles.set(Number(max));
+  }
+
+  async saveScheduleSettings(): Promise<void> {
+    try {
+      await fetch(`${this.API}/api/backup/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: this.backupEnabled(),
+          intervalHours: this.backupIntervalHours(),
+          maxBackups: this.backupMaxFiles()
+        })
+      });
+      this.toast.success('Configuración de respaldo guardada.');
+    } catch {
+      this.toast.error('Error al guardar configuración de respaldo.');
+    }
+  }
+
+  downloadBackup(filename: string): void {
+    window.open(`${this.API}/api/backup/download/${filename}`, '_blank');
+  }
+
+  async deleteBackup(filename: string): Promise<void> {
+    if (!confirm('¿Eliminar este respaldo?')) return;
+    try {
+      await fetch(`${this.API}/api/backup/${filename}`, { method: 'DELETE' });
+      this.toast.info('Respaldo eliminado.');
+      this.loadBackupList();
+    } catch {
+      this.toast.error('Error al eliminar respaldo.');
+    }
+  }
+
+  async restoreBackup(filename: string): Promise<void> {
+    if (!confirm('¿Restaurar la base de datos desde este respaldo? La aplicación necesitará reiniciarse.')) return;
+    try {
+      const res = await fetch(`${this.API}/api/backup/restore/${filename}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        this.toast.success('Base de datos restaurada. Reinicia la aplicación.');
+      } else {
+        this.toast.error('Error: ' + (data.error || 'Unknown'));
+      }
+    } catch {
+      this.toast.error('Error al restaurar respaldo.');
+    }
+  }
+
+  formatSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // ═══ RIF Scanner ═══
 
   async onRifFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];

@@ -236,6 +236,8 @@
         </div>
       </div>
       <div class="config-section__body">
+
+        <!-- Quick Actions -->
         <div class="backup-actions">
           <button class="btn btn--success" (click)="exportJson()">
             <span class="material-symbols-rounded">download</span>
@@ -247,6 +249,96 @@
           </button>
           <input type="file" accept=".json" #fileInput (change)="onFileSelected($event)" style="display:none">
         </div>
+
+        <!-- ZIP Backup -->
+        <div class="backup-zip-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 600; margin: 0;">{{ i18n.t('config.zipBackup') || 'Respaldo ZIP de Base de Datos' }}</h3>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0;">{{ i18n.t('config.zipBackupDesc') || 'Genera una copia comprimida de tu base de datos SQLite.' }}</p>
+            </div>
+            <button class="btn btn--primary" (click)="createZipBackup()" [disabled]="isCreatingBackup()">
+              @if (isCreatingBackup()) {
+                <span class="loader-spinner"></span> {{ i18n.t('common.loading') }}
+              } @else {
+                <span class="material-symbols-rounded">archive</span>
+                {{ i18n.t('config.createBackupNow') || 'Crear Respaldo Ahora' }}
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Schedule Settings -->
+        <div class="backup-schedule-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+              <h3 style="font-size: 15px; font-weight: 600; margin: 0;">{{ i18n.t('config.autoBackup') || 'Respaldo Automático' }}</h3>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0;">{{ i18n.t('config.autoBackupDesc') || 'Programa respaldos periódicos mientras la aplicación esté abierta.' }}</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [checked]="backupEnabled()" (change)="toggleScheduledBackup($event)">
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+          @if (backupEnabled()) {
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; align-items: end;">
+              <div class="form-group" style="flex: 1; min-width: 150px;">
+                <label>{{ i18n.t('config.interval') || 'Intervalo' }}</label>
+                <select [ngModel]="backupIntervalHours()" (ngModelChange)="setBackupInterval($event)">
+                  <option [value]="1">{{ i18n.t('config.everyHour') || 'Cada hora' }}</option>
+                  <option [value]="6">{{ i18n.t('config.every6h') || 'Cada 6 horas' }}</option>
+                  <option [value]="12">{{ i18n.t('config.every12h') || 'Cada 12 horas' }}</option>
+                  <option [value]="24">{{ i18n.t('config.every24h') || 'Cada 24 horas' }}</option>
+                  <option [value]="48">{{ i18n.t('config.every48h') || 'Cada 48 horas' }}</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 1; min-width: 150px;">
+                <label>{{ i18n.t('config.maxBackups') || 'Máximo de respaldos' }}</label>
+                <select [ngModel]="backupMaxFiles()" (ngModelChange)="setBackupMax($event)">
+                  <option [value]="5">5</option>
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                </select>
+              </div>
+              <button class="btn btn--secondary btn--sm" (click)="saveScheduleSettings()">
+                <span class="material-symbols-rounded">save</span>
+                {{ i18n.t('common.save') || 'Guardar' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Backup History -->
+        @if (backupList().length > 0) {
+          <div class="backup-history" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 1rem;">{{ i18n.t('config.backupHistory') || 'Historial de Respaldos' }}</h3>
+            <div class="backup-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
+              @for (bk of backupList(); track bk.name) {
+                <div class="backup-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                  <div>
+                    <span style="font-size: 13px; font-weight: 600;">{{ bk.name }}</span>
+                    <span style="font-size: 12px; color: var(--text-secondary); margin-left: 0.5rem;">{{ formatSize(bk.size) }}</span>
+                    <br>
+                    <span style="font-size: 11px; color: var(--text-tertiary);">{{ bk.date | date:'medium' }}</span>
+                  </div>
+                  <div style="display: flex; gap: 0.25rem;">
+                    <button class="btn btn--ghost btn--icon btn--sm" (click)="downloadBackup(bk.name)" title="Descargar">
+                      <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                    </button>
+                    <button class="btn btn--ghost btn--icon btn--sm" (click)="restoreBackup(bk.name)" title="Restaurar">
+                      <span class="material-symbols-rounded" style="font-size: 18px; color: var(--accent-warning);">settings_backup_restore</span>
+                    </button>
+                    <button class="btn btn--ghost btn--icon btn--sm" (click)="deleteBackup(bk.name)" title="Eliminar">
+                      <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-danger);">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
       </div>
     </section>
 
