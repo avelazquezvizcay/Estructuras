@@ -416,6 +416,216 @@ app.post('/api/backup/restore/:filename', (req, res) => {
   }
 });
 
+// BCV Proxy and Rate API endpoints
+app.get('/api/bcv-proxy', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+  const bcvUrl = 'https://www.bcv.org.ve/?t=' + Date.now();
+  
+  // Disable strict SSL validation for this process/request
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+  let html = '';
+  let proxyUsed = 'Direct BCV (No SSL Check)';
+
+  let signal;
+  try {
+    signal = AbortSignal.timeout(8000);
+  } catch (e) {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 8000);
+    signal = controller.signal;
+  }
+
+  // 🥇 Try direct connection to BCV first
+  try {
+    log('BCV Proxy: Attempting direct connection to BCV...');
+    const directResponse = await fetch(bcvUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9'
+      },
+      signal
+    });
+
+    if (directResponse.ok) {
+      const text = await directResponse.text();
+      if (text.length > 20000 && text.includes('USD')) {
+        html = text;
+        log('BCV Proxy: Direct connection successful!');
+      }
+    }
+  } catch (err) {
+    log('BCV Proxy: Direct connection failed: ' + err.message);
+  }
+
+  // 🥈 Try DolarAPI fallback internally if direct connection failed
+  if (!html) {
+    try {
+      log('BCV Proxy: Direct failed, trying internal fallback (DolarAPI)...');
+      proxyUsed = 'Internal Proxy Fallback (DolarAPI)';
+      
+      const [usdRes, eurRes] = await Promise.all([
+        fetch('https://ve.dolarapi.com/v1/dolares'),
+        fetch('https://ve.dolarapi.com/v1/euros')
+      ]);
+
+      if (usdRes.ok && eurRes.ok) {
+        const usdData = await usdRes.json();
+        const eurData = await eurRes.json();
+        
+        const bcvUsd = usdData.find(d => d.fuente === 'oficial' || d.entidad === 'BCV')?.promedio;
+        const bcvEur = eurData.find(d => d.fuente === 'oficial' || d.entidad === 'BCV')?.promedio;
+
+        if (bcvUsd && bcvEur) {
+          log(`BCV Proxy: Success with fallback - USD: ${bcvUsd} | EUR: ${bcvEur}`);
+          return res.json({
+            ok: true,
+            tasas: {
+              bcv: bcvUsd,
+              euro_bcv: bcvEur
+            },
+            source: 'bcv-proxy (internal fallback)',
+            proxy: proxyUsed,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    } catch (err) {
+      log('BCV Proxy: Fallback failed: ' + err.message);
+    }
+  }
+
+  if (!html) {
+    return res.status(502).json({ 
+      ok: false, 
+      error: 'All connection attempts failed to retrieve rates from BCV and DolarAPI' 
+    });
+  }
+
+  // Parse rates from HTML
+  try {
+    let usd = 0;
+    let eur = 0;
+    let patronAplicado = '';
+
+    const parseVal = (str) => parseFloat(str.replace(',', '.'));
+
+    const findPatternA = (currency) => {
+      const regex = new RegExp(`${currency}[\\s\\S]{1,400}?<strong[^>]*class="[^"]*strong-tb[^"]*"[^>]*>\\s*([0-9]+,[0-9]+)`, 'i');
+      const match = html.match(regex);
+      return match ? parseVal(match[1]) : 0;
+    };
+
+    const findPatternB = (id) => {
+      const regex = new RegExp(`id="${id}"[\\s\\S]{1,200}?<strong[^>]*>\\s*([0-9]+,[0-9]+)`, 'i');
+      const match = html.match(regex);
+      return match ? parseVal(match[1]) : 0;
+    };
+
+    const findPatternC = (currency) => {
+      const regex = new RegExp(`class="recuadrotsmc"[\\s\\S]{1,200}?${currency}[\\s\\S]{1,200}?([0-9]+,[0-9]+)`, 'i');
+      const match = html.match(regex);
+      return match ? parseVal(match[1]) : 0;
+    };
+
+    const findPatternD = (currency) => {
+      const regex = new RegExp(`${currency}[\\s\\S]{1,50}?([0-9]+,[0-9]+)`, 'i');
+      const match = html.match(regex);
+      return match ? parseVal(match[1]) : 0;
+    };
+
+    usd = findPatternA('USD');
+    eur = findPatternA('EUR');
+    if (usd > 0) patronAplicado = 'Patron A (strong-tb)';
+
+    if (!usd) {
+      usd = findPatternB('dolar');
+      eur = findPatternB('euro');
+      if (usd > 0) patronAplicado = 'Patron B (id contenedor)';
+    }
+
+    if (!usd) {
+      usd = findPatternC('USD');
+      eur = findPatternC('EUR');
+      if (usd > 0) patronAplicado = 'Patron C (recuadrotsmc)';
+    }
+
+    if (!usd) {
+      usd = findPatternD('USD');
+      eur = findPatternD('EUR');
+      if (usd > 0) patronAplicado = 'Patron D (texto plano)';
+    }
+
+    if (!usd) {
+      const regexE = /<strong[^>]*class="[^"]*strong-tb[^"]*"[^>]*>\s*([0-9]+,[0-9]+)/gi;
+      let matches;
+      let valores = [];
+      while ((matches = regexE.exec(html)) !== null) {
+        valores.push(parseVal(matches[1]));
+      }
+      if (valores.length >= 2) {
+        valores.sort((a, b) => a - b);
+        usd = valores[0];
+        eur = valores[valores.length - 1];
+        patronAplicado = 'Patron E (strong-tb ordered)';
+      }
+    }
+
+    log(`BCV Proxy: Rates parsed - USD: ${usd} | EUR: ${eur} | Pattern: ${patronAplicado}`);
+
+    if (!usd || usd < 1 || isNaN(usd)) {
+      return res.status(500).json({ 
+        ok: false, 
+        error: `Could not parse USD rate from HTML (${html.length} characters)` 
+      });
+    }
+
+    return res.json({
+      ok: true,
+      tasas: {
+        bcv: usd,
+        euro_bcv: eur
+      },
+      source: 'bcv-proxy',
+      proxy: proxyUsed,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (parseError) {
+    return res.status(500).json({ 
+      ok: false, 
+      error: `Error parsing HTML: ${parseError.message}` 
+    });
+  }
+});
+
+app.get('/api/dolar', async (req, res) => {
+  try {
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares');
+    if (!response.ok) throw new Error(`DolarAPI error: ${response.status}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    log('Proxy Dolar failed: ' + err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+app.get('/api/euro', async (req, res) => {
+  try {
+    const response = await fetch('https://ve.dolarapi.com/v1/euros');
+    if (!response.ok) throw new Error(`DolarAPI error: ${response.status}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    log('Proxy Euro failed: ' + err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════════════════════
 
 let serverInstance = null;
@@ -428,7 +638,7 @@ function startServer() {
   }
 }
 
-if (require.main === module) {
+if (require.main === module || (process.argv.length > 1 && process.argv[1].endsWith('server.js'))) {
   startServer();
 }
 

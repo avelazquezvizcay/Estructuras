@@ -29,7 +29,7 @@
     <!-- Navigation -->
     <nav class="sidebar__nav" aria-label="Navegación principal">
       <ul class="sidebar__nav-list">
-        @for (item of navItems(); track item.route) {
+        @for (item of navItems(); track item.id) {
           <li>
             <a class="sidebar__nav-item"
                [routerLink]="item.route"

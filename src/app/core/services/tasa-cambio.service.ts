@@ -22,11 +22,11 @@ export class TasaCambioService {
   private readonly notifService = inject(NotificationService);
   private readonly sqlite = inject(SqliteDatabaseService);
 
-  // En Electron (file://) no hay proxy de Angular, usamos URLs directas
-  private readonly isElectron = window.location.protocol === 'file:';
-  private urlBcv = this.isElectron ? 'https://www.bcv.org.ve/' : '/api/bcv/';
-  private urlDolar = this.isElectron ? 'https://ve.dolarapi.com/v1/dolares' : '/api/dolar';
-  private urlEuro = this.isElectron ? 'https://ve.dolarapi.com/v1/euros' : '/api/euro';
+  // API URLs apuntando al servidor Express local (robusto, anti-bloqueo y sin problemas de SSL/CORS)
+  private readonly expressApiUrl = `http://${window.location.hostname || '127.0.0.1'}:3000/api`;
+  private urlBcv = `${this.expressApiUrl}/bcv-proxy`;
+  private urlDolar = `${this.expressApiUrl}/dolar`;
+  private urlEuro = `${this.expressApiUrl}/euro`;
 
   private readonly _tasas = signal<TasaCambio[]>([]);
   private readonly _tasaPreferida = signal<TipoTasa>('BCV_USD');
@@ -112,23 +112,18 @@ export class TasaCambioService {
     }
   }
 
-  // ─── Fuente 1: BCV Scraping Oficial (Prioridad) ─────────────
+  // ─── Fuente 1: BCV Proxy Local (Prioridad) ─────────────
   private async fetchBcvScraping(): Promise<void> {
-    const res = await fetch(this.urlBcv, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36' }
-    });
+    const res = await fetch(this.urlBcv);
     if (!res.ok) throw new Error(`BCV fetch error: ${res.status}`);
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const data = await res.json();
 
-    const rawUsd = doc.querySelector('#dolar strong')?.textContent ?? '0';
-    const bcv = parseFloat(rawUsd.replace(',', '.').trim());
+    if (!data.ok || !data.tasas || !data.tasas.bcv) {
+      throw new Error(data.error || 'Invalid response from local BCV proxy');
+    }
 
-    const rawEur = doc.querySelector('#euro strong')?.textContent ?? '0';
-    const euro = parseFloat(rawEur.replace(',', '.').trim());
-
-    if (!bcv || isNaN(bcv)) throw new Error('BCV parse failed');
+    const bcv = data.tasas.bcv;
+    const euro = data.tasas.euro_bcv || 0;
 
     // For Binance/paralelo, try DolarAPI as complement
     let binance = bcv * 1.03; // Default estimate
@@ -143,7 +138,7 @@ export class TasaCambioService {
       }
     } catch {}
 
-    this.commitRates(bcv, binance, euro || 0, 'bcv');
+    this.commitRates(bcv, binance, euro, data.source || 'bcv-proxy');
   }
 
   // ─── Fuente 2: DolarAPI (datos oficiales agregados) ─────────

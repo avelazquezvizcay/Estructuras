@@ -93,12 +93,20 @@
 
         <div class="simulation-total">
           <div class="total-row">
+            <span>Costo Total del Pedido:</span>
+            <span class="total-value" style="color: var(--text-primary);">{{ formatPrice(costoTotalMateriales()) }}</span>
+          </div>
+          <div class="total-row" style="margin-top: 12px; border-top: 1px dashed var(--border-secondary); padding-top: 12px;">
             <span>Inversión necesaria:</span>
-            <span class="total-value">${{ costoTotalSimulado().toFixed(2) }}</span>
+            <span class="total-value" [style.color]="costoTotalSimulado() > 0 ? 'var(--accent-danger)' : 'var(--accent-success)'">{{ formatPrice(costoTotalSimulado()) }}</span>
           </div>
           @if (costoTotalSimulado() > 0) {
-            <p class="total-hint">
+            <p class="total-hint" style="color: var(--accent-danger);">
               Estimado para comprar lo que falta en inventario.
+            </p>
+          } @else {
+            <p class="total-hint" style="color: var(--accent-success);">
+              ¡Tienes todo en stock! No requieres inversión adicional.
             </p>
           }
         </div>

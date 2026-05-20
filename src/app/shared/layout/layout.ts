@@ -39,11 +39,14 @@ export class Layout {
 
   protected readonly navItems = computed(() => {
     const mods = this.auth.visibleModules();
-    return mods.map(m => ({
-      label: m.label,
-      icon: m.icon,
-      route: m.route
-    }));
+    return mods
+      .filter(m => !!m.route)
+      .map(m => ({
+        id: m.id,
+        label: m.label,
+        icon: m.icon,
+        route: m.route
+      }));
   });
 
   protected readonly userInitials = computed(() => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, inject, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../core/services/producto.service';
 import { InsumoService } from '../../core/services/insumo.service';
@@ -23,7 +23,7 @@ interface PresupuestoItem {
   styleUrl: './presupuestos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Presupuestos implements OnInit {
+export class Presupuestos {
   protected readonly productoService = inject(ProductoService);
   protected readonly insumoService = inject(InsumoService);
   protected readonly tasaService = inject(TasaCambioService);
@@ -59,10 +59,13 @@ export class Presupuestos implements OnInit {
     }).filter(i => i !== null) as { _index: number, producto: any, cantidad: number }[];
   });
 
-  ngOnInit(): void {
-    if (this.productosSeleccionados().length === 0 && this.productoService.productos().length > 0) {
-      this.addItem();
-    }
+  constructor() {
+    effect(() => {
+      const productos = this.productoService.productos();
+      if (productos.length > 0 && this.productosSeleccionados().length === 0) {
+        this.addItem();
+      }
+    });
   }
 
   addItem(): void {
@@ -125,9 +128,14 @@ export class Presupuestos implements OnInit {
         stockActual,
         falta: falta.toNumber(),
         tieneSuficiente: falta.isZero(),
-        costoFaltante: insumo ? falta.mul(insumo.costoUnidadBaseUsd).toNumber() : 0
+        costoFaltante: insumo ? falta.mul(insumo.costoUnidadBaseUsd).toNumber() : 0,
+        costoTotal: insumo ? m.cantidad.mul(insumo.costoUnidadBaseUsd).toNumber() : 0
       };
     });
+  });
+
+  protected readonly costoTotalMateriales = computed(() => {
+    return this.materialesConsolidados().reduce((sum, m) => sum + m.costoTotal, 0);
   });
 
   protected readonly costoTotalSimulado = computed(() => {
@@ -144,8 +152,15 @@ export class Presupuestos implements OnInit {
     this.updateConfig('monedaReporte', nuevaMoneda);
   }
 
-  formatPrice(usdValue: string | Decimal, addSymbol = true): string {
-    const val = typeof usdValue === 'string' ? new Decimal(usdValue) : usdValue;
+  formatPrice(usdValue: string | Decimal | number, addSymbol = true): string {
+    let val: Decimal;
+    if (typeof usdValue === 'number') {
+      val = new Decimal(usdValue);
+    } else if (typeof usdValue === 'string') {
+      val = new Decimal(usdValue);
+    } else {
+      val = usdValue;
+    }
     if (this.monedaDisplay() === 'VES') {
       const tasa = this.tasaService.tasaActiva();
       if (tasa) {

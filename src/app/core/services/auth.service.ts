@@ -57,10 +57,19 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly sqlite = inject(SqliteDatabaseService);
 
-  private readonly _currentUser = signal<AppUser | null>(null);
+  private getInitialUser(): AppUser | null {
+    try {
+      const sessionRaw = localStorage.getItem('sec_session');
+      return sessionRaw ? JSON.parse(sessionRaw) as AppUser : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private readonly _currentUser = signal<AppUser | null>(this.getInitialUser());
   private readonly _users = signal<AppUser[]>([]);
   private readonly _modules = signal<ModuleConfig[]>(DEFAULT_MODULES);
-  private readonly _isLoggedIn = signal(false);
+  private readonly _isLoggedIn = signal<boolean>(!!this.getInitialUser());
 
   readonly currentUser = this._currentUser.asReadonly();
   readonly users = this._users.asReadonly();
@@ -98,7 +107,8 @@ export class AuthService {
     if (lic) {
       // Si la licencia tiene '*' tiene acceso a todo lo que su rol le permita
       // Si no tiene '*', debe estar el ID en la lista
-      const hasLicenceAccess = lic.modules.includes('*') || lic.modules.includes(moduleId);
+      const modules = lic.modules || ['*']; // Default to full access if modules field is missing
+      const hasLicenceAccess = modules.includes('*') || modules.includes(moduleId);
       if (!hasLicenceAccess) return false;
     }
 
@@ -276,6 +286,9 @@ export class AuthService {
           this._isLoggedIn.set(true);
         } else {
           localStorage.removeItem('sec_session');
+          this._currentUser.set(null);
+          this._isLoggedIn.set(false);
+          this.router.navigate(['/login']);
         }
       }
     } catch (e) {
